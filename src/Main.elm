@@ -1,4 +1,4 @@
-module Main exposing (main)
+module Main exposing (..)
 
 import Html exposing (Html, div, text)
 import Json.Decode as D exposing (Decoder,string, field)
@@ -12,16 +12,19 @@ type alias PwdRec =
     , grp: String
     }
 
-optStr : Decoder String
-optStr = D.map (withDefault "") (D.maybe string)
+optional : a -> Decoder a -> Decoder a
+optional default decoder = D.map (withDefault default) (D.maybe decoder)
+
+optStr : String -> Decoder String
+optStr fn = optional "" (field fn string)
 
 pwdRecDecoder : Decoder PwdRec
 pwdRecDecoder = D.map5 PwdRec
     (field "name" string)
-    (field "url" optStr)
-    (field "password" optStr)
-    (field "comment" optStr)
-    (field "group" optStr)
+    (optStr "url")
+    (optStr "password")
+    (optStr "comment")
+    (optStr "group")
 
 type alias Model = 
     { passwords: List PwdRec
