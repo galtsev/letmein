@@ -5,10 +5,12 @@ import Html.Attributes exposing (value, href, class)
 import Html.Events exposing (onClick, onInput)
 import Http exposing (Error(..))
 import Json.Decode as D exposing (Decoder, field, string)
+import Json.Encode as E
 import Maybe exposing (withDefault)
 import RemoteData exposing (RemoteData(..), WebData)
 import Navigation exposing (Location, newUrl)
 import UrlParser as U exposing (Parser, top, s, (</>))
+import Debug
 
 
 type alias PwdRec =
@@ -46,6 +48,16 @@ pwdRecDecoder =
         (optStr "password")
         (optStr "comment")
         (optStr "group")
+
+pwdRecEncode : PwdRec -> E.Value
+pwdRecEncode p =
+    E.object
+        [ ("name", E.string p.name)
+        , ("url", E.string p.url)
+        , ("password", E.string p.password)
+        , ("comment", E.string p.comment)
+        , ("group", E.string p.grp)
+        ]
 
 type Route =
     RtList
@@ -99,13 +111,31 @@ type Msg
     | NavigateTo Route
     | MsgForm FormMsg
     | SaveForm
+    | Debug String
+    | Upload
 
 
 getPasswords : Cmd Msg
 getPasswords =
-    Http.get "http://localhost:8080/data/passwords.json" (D.list pwdRecDecoder)
+    Http.get "data/passwords.json" (D.list pwdRecDecoder)
         |> RemoteData.sendRequest
         |> Cmd.map PasswordsResponse
+
+putPasswords : List PwdRec -> Cmd Msg
+putPasswords pwds =
+    let
+        url = "data/passwords.json"
+        req = Http.request
+            { method = "PUT"
+            , headers = []
+            , url = url
+            , body = Http.jsonBody (E.list << List.map pwdRecEncode <| pwds)
+            , expect = Http.expectStringResponse (\_ -> Ok ())
+            , timeout = Nothing
+            , withCredentials = False
+            }
+    in
+    Http.send (Debug << toString) req
 
 
 init : Location -> ( Model, Cmd Msg )
@@ -167,6 +197,9 @@ update msg model =
                         _ -> model.passwords
             in
             ({model|passwords=newPasswords, route = RtList}, Cmd.none)
+        Debug str -> Debug.log str (model, Cmd.none)
+        Upload ->
+            (model, putPasswords <| RemoteData.withDefault [] model.passwords)
 
 
 viewWebData : (a -> Html Msg) -> WebData a -> Html Msg
@@ -222,6 +255,7 @@ viewList pwds =
     in
     div []
         [ button [onClick <| NavigateTo RtNew] [text "New"]
+        , button [onClick Upload] [text "Upload"]
         , lst
         ]
     
