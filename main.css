@@ -3,3 +3,9 @@ body {
     max-width: 800px;
     margin: 20px auto;
 }
+
+.action {
+    cursor: pointer;
+    color: blue;
+    text-decoration: underline;
+}

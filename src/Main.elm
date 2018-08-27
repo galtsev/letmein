@@ -188,7 +188,6 @@ update msg model =
             ( {model | form = updateForm fmsg model.form}, Cmd.none)
         SaveForm ->
             let
-                upd k v itm = if itm.name==k then v else itm
                 updatePwdList k v = List.map (\itm -> if itm.name==k then v else itm)
                 newPasswords =
                     case model.route of
@@ -245,12 +244,15 @@ viewWebData f wd =
         Success a ->
             f a
 
+action : String -> Route -> Html Msg
+action label route =
+    Html.a [onClick (NavigateTo route), class "action"] [text label]
 
 viewList : List PwdRec -> Html Msg
 viewList pwds =
     let
         viewRec r =
-            div [] [ Html.a [href <| toHash <| RtEdit r.name] [text r.name ]]
+            div [] [ action r.name <| RtEdit r.name]
         lst = div [] <| List.map viewRec pwds
     in
     div []
@@ -279,7 +281,7 @@ viewForm rec =
                 ]
     in
     div []
-        [ div [] [Html.a [href <| toHash <| RtList] [text "<- Back to list"]]
+        [ div [] [ action "<- Back to list" RtList ]
         , tbl
         , div [] [button [onClick SaveForm] [text "save"]]
         ]
