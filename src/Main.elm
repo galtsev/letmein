@@ -103,7 +103,7 @@ type Msg
 
 getPasswords : Cmd Msg
 getPasswords =
-    Http.get "passwords.json" (D.list pwdRecDecoder)
+    Http.get "http://localhost:8080/data/passwords.json" (D.list pwdRecDecoder)
         |> RemoteData.sendRequest
         |> Cmd.map PasswordsResponse
 

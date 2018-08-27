@@ -1,0 +1,7 @@
+localhost:8080
+#root "/home/dan/data/caddy"
+header / "Access-Control-Allow-Origin" "*"
+
+upload /data {
+    to "data"
+}
