@@ -2,7 +2,7 @@ module Main exposing (Model, Msg(..), PwdRec, getPasswords, init, main, optStr, 
 
 import Html exposing (Html, div, text, input, button)
 import Html.Attributes exposing (value, href, class)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onInput)
 import Http exposing (Error(..))
 import Json.Decode as D exposing (Decoder, field, string)
 import Maybe exposing (withDefault)
@@ -86,10 +86,19 @@ emptyModel =
     , form = emptyPwdRec
     }
 
+type FormMsg =
+    FmName String
+    | FmUrl String
+    | FmPassword String
+    | FmGroup String
+    | FmComment String
+
 type Msg
     = PasswordsResponse (WebData (List PwdRec))
     | RouteTo Location
     | NavigateTo Route
+    | MsgForm FormMsg
+    | SaveForm
 
 
 getPasswords : Cmd Msg
@@ -123,6 +132,15 @@ routeChanged route model =
         RtEdit name -> {model | form = findRecX name model.passwords}
         _ -> model
 
+updateForm : FormMsg -> PwdRec -> PwdRec
+updateForm msg rec =
+    case msg of
+        FmName s -> {rec | name = s}
+        FmUrl s -> {rec | url = s}
+        FmPassword s -> {rec | password = s}
+        FmGroup s -> {rec | grp = s}
+        FmComment s -> {rec | comment = s}
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -136,6 +154,19 @@ update msg model =
             ( {newModel | route = newRoute }, Cmd.none)
         NavigateTo route ->
             (model, newUrl (toHash route))
+        MsgForm fmsg ->
+            ( {model | form = updateForm fmsg model.form}, Cmd.none)
+        SaveForm ->
+            let
+                upd k v itm = if itm.name==k then v else itm
+                updatePwdList k v = List.map (\itm -> if itm.name==k then v else itm)
+                newPasswords =
+                    case model.route of
+                        RtNew -> RemoteData.map ((::) model.form) model.passwords
+                        RtEdit name -> RemoteData.map (updatePwdList name model.form) model.passwords
+                        _ -> model.passwords
+            in
+            ({model|passwords=newPasswords, route = RtList}, Cmd.none)
 
 
 viewWebData : (a -> Html Msg) -> WebData a -> Html Msg
@@ -203,16 +234,20 @@ viewForm rec =
                 [ Html.td [] [text label]
                 , Html.td [] [fld]
                 ]
+        inp val msg = input [value val, onInput (MsgForm << msg)] []
         tbl =
             Html.table []
-                [ row "name" <| input [value rec.name] []
-                , row "url" <| input [value rec.url] []
-                , row "password" <| input [value rec.password] []
+                [ row "name" <| inp rec.name FmName
+                , row "url" <| inp rec.url FmUrl
+                , row "password" <| inp rec.password FmPassword
+                , row "group" <| inp rec.grp FmGroup
+                , row "comment" <| Html.textarea [value rec.comment, onInput (MsgForm << FmComment)] []
                 ]
     in
     div []
         [ div [] [Html.a [href <| toHash <| RtList] [text "<- Back to list"]]
         , tbl
+        , div [] [button [onClick SaveForm] [text "save"]]
         ]
 
 
