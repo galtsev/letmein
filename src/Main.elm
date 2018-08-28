@@ -11,7 +11,11 @@ import RemoteData exposing (RemoteData(..), WebData)
 import Navigation exposing (Location, newUrl)
 import UrlParser as U exposing (Parser, top, s, (</>))
 import Debug
+import Random
+import Crypto.Strings as Cs
 
+masterPwd : String
+masterPwd = "letmein"
 
 type alias PwdRec =
     { name : String
@@ -121,15 +125,20 @@ getPasswords =
         |> RemoteData.sendRequest
         |> Cmd.map PasswordsResponse
 
+seed : Random.Seed
+seed = Random.initialSeed 0
+
 putPasswords : List PwdRec -> Cmd Msg
 putPasswords pwds =
     let
-        url = "data/passwords.json"
+        jsonBody = E.encode 2 (E.list << List.map pwdRecEncode <| pwds)
+        body = Cs.justEncrypt seed masterPwd jsonBody
+        url = "data/passwords.json.aes"
         req = Http.request
             { method = "PUT"
             , headers = []
             , url = url
-            , body = Http.jsonBody (E.list << List.map pwdRecEncode <| pwds)
+            , body = Http.stringBody "application/binary" body
             , expect = Http.expectStringResponse (\_ -> Ok ())
             , timeout = Nothing
             , withCredentials = False
