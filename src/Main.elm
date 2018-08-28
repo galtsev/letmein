@@ -1,67 +1,15 @@
-module Main exposing (Model, Msg(..), PwdRec, getPasswords, init, main, optStr, optional, pwdRecDecoder, update, view, viewList, viewWebData)
+module Main exposing (Model, Msg(..), init, main, update, view, viewList, viewWebData)
 
 import Html exposing (Html, div, text, input, button)
 import Html.Attributes exposing (value, href, class)
 import Html.Events exposing (onClick, onInput)
 import Http exposing (Error(..))
-import Json.Decode as D exposing (Decoder, field, string)
-import Json.Encode as E
-import Maybe exposing (withDefault)
 import RemoteData exposing (RemoteData(..), WebData)
 import Navigation exposing (Location, newUrl)
 import UrlParser as U exposing (Parser, top, s, (</>))
 import Debug
-import Random
-import Crypto.Strings as Cs
+import PwdRec exposing (PwdRec)
 
-masterPwd : String
-masterPwd = "letmein"
-
-type alias PwdRec =
-    { name : String
-    , url : String
-    , password : String
-    , comment : String
-    , grp : String
-    }
-
-emptyPwdRec : PwdRec
-emptyPwdRec =
-    { name = ""
-    , url = ""
-    , password = ""
-    , comment = ""
-    , grp = ""
-    }
-
-optional : a -> Decoder a -> Decoder a
-optional default decoder =
-    D.map (withDefault default) (D.maybe decoder)
-
-
-optStr : String -> Decoder String
-optStr fn =
-    optional "" (field fn string)
-
-
-pwdRecDecoder : Decoder PwdRec
-pwdRecDecoder =
-    D.map5 PwdRec
-        (field "name" string)
-        (optStr "url")
-        (optStr "password")
-        (optStr "comment")
-        (optStr "group")
-
-pwdRecEncode : PwdRec -> E.Value
-pwdRecEncode p =
-    E.object
-        [ ("name", E.string p.name)
-        , ("url", E.string p.url)
-        , ("password", E.string p.password)
-        , ("comment", E.string p.comment)
-        , ("group", E.string p.grp)
-        ]
 
 type Route =
     RtList
@@ -86,7 +34,7 @@ locationParser = U.oneOf
 
 parseLocation : Location -> Route
 parseLocation loc = 
-    withDefault (RtNotFound loc.hash)
+    Maybe.withDefault (RtNotFound loc.hash)
     <| U.parseHash locationParser loc
 
 type alias Model =
@@ -99,7 +47,7 @@ emptyModel : Model
 emptyModel =
     { passwords = NotAsked
     , route = RtList
-    , form = emptyPwdRec
+    , form = PwdRec.empty
     }
 
 type FormMsg =
@@ -119,44 +67,16 @@ type Msg
     | Upload
 
 
-getPasswords : Cmd Msg
-getPasswords =
-    Http.get "data/passwords.json" (D.list pwdRecDecoder)
-        |> RemoteData.sendRequest
-        |> Cmd.map PasswordsResponse
-
-seed : Random.Seed
-seed = Random.initialSeed 0
-
-putPasswords : List PwdRec -> Cmd Msg
-putPasswords pwds =
-    let
-        jsonBody = E.encode 2 (E.list << List.map pwdRecEncode <| pwds)
-        body = Cs.justEncrypt seed masterPwd jsonBody
-        url = "data/passwords.json.aes"
-        req = Http.request
-            { method = "PUT"
-            , headers = []
-            , url = url
-            , body = Http.stringBody "application/binary" body
-            , expect = Http.expectStringResponse (\_ -> Ok ())
-            , timeout = Nothing
-            , withCredentials = False
-            }
-    in
-    Http.send (Debug << toString) req
-
-
 init : Location -> ( Model, Cmd Msg )
 init location =
-    ( { emptyModel | route = parseLocation location }, getPasswords )
+    ( { emptyModel | route = parseLocation location }, PwdRec.getPasswords PasswordsResponse)
 
 routeChanged : Route -> Model -> Model
 routeChanged route model =
     let
         findRec name lst =
             case lst of
-                []  -> emptyPwdRec
+                []  -> PwdRec.empty
                 x :: xs ->
                     if x.name == name
                         then x
@@ -164,10 +84,10 @@ routeChanged route model =
         findRecX name pwds =
             case pwds of
                 Success p -> findRec name p
-                _ -> emptyPwdRec
+                _ -> PwdRec.empty
     in
     case route of
-        RtNew -> { model | form = emptyPwdRec }
+        RtNew -> { model | form = PwdRec.empty }
         RtEdit name -> {model | form = findRecX name model.passwords}
         _ -> model
 
@@ -207,7 +127,7 @@ update msg model =
             ({model|passwords=newPasswords, route = RtList}, Cmd.none)
         Debug str -> Debug.log str (model, Cmd.none)
         Upload ->
-            (model, putPasswords <| RemoteData.withDefault [] model.passwords)
+            (model, PwdRec.putPasswords Debug <| RemoteData.withDefault [] model.passwords)
 
 
 viewWebData : (a -> Html Msg) -> WebData a -> Html Msg
