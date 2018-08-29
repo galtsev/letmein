@@ -17,6 +17,7 @@ type alias Model =
     { passwords : RemoteData ApiError (List PwdRec)
     , route : Route
     , form : PwdRec
+    , masterPwd : String
     }
 
 emptyModel : Model
@@ -24,6 +25,7 @@ emptyModel =
     { passwords = NotAsked
     , route = RtList
     , form = PwdRec.empty
+    , masterPwd = "letmein"
     }
 
 type FormMsg =

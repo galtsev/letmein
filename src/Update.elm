@@ -9,6 +9,11 @@ import Route exposing (Route(..), toHash, parseLocation)
 import Json.Decode as D
 import Json.Encode as E
 import Api
+import Random
+import Crypto.Strings as Cr
+
+seed : Random.Seed
+seed = Random.initialSeed  0
 
 
 routeChanged : Route -> Model -> Model
@@ -46,13 +51,27 @@ update msg model =
     case msg of
         PasswordsResponse d ->
             let
+                decrypt : String -> Result ApiError String
+                decrypt src = Cr.decrypt model.masterPwd src
+                    |> Result.mapError Other
+
                 decode : String -> Result ApiError (List PwdRec)
                 decode json = D.decodeString (D.list PwdRec.decoder) json
                     |> Result.mapError Other
 
+                mapMissing : Result ApiError (List PwdRec) -> Result ApiError (List PwdRec)
+                mapMissing r =
+                    case r of
+                        Err NotFound -> Ok []
+                        _ -> r
+
                 pwds : RemoteData ApiError (List PwdRec)
-                pwds = Result.andThen decode d
+                pwds =
+                    Result.andThen decrypt d
+                    |> Result.andThen decode
+                    |> mapMissing
                     |> RemoteData.fromResult
+
             in
             ( { model | passwords = pwds }, Cmd.none )
         RouteTo location ->
@@ -83,12 +102,13 @@ update msg model =
                     |> List.map PwdRec.encode
                     |> E.list
                     |> E.encode 2
+                encryptedPwds = Cr.justEncrypt seed model.masterPwd jsonPwds
                 dumpRes : Result ApiError String -> String
                 dumpRes r =
                     case r of
                         Ok s -> s
                         Err e -> Types.errToString e
-                cmd = Api.put (dumpRes >> Debug) "passwords.json" jsonPwds
+                cmd = Api.put (dumpRes >> Debug) "passwords.json" encryptedPwds
             in
             (model, cmd)
 
