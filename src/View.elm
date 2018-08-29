@@ -7,7 +7,7 @@ import Http exposing (Error(..))
 import RemoteData exposing (RemoteData(..), WebData)
 
 
-import Types exposing (Msg(..), FormMsg(..), Model)
+import Types exposing (Msg(..), FormMsg(..), Model, ApiError(..))
 import Route exposing (Route(..))
 import PwdRec exposing (PwdRec)
 
@@ -55,6 +55,28 @@ viewWebData f wd =
         Success a ->
             f a
 
+viewApiData : (a -> Html Msg) -> RemoteData ApiError a -> Html Msg
+viewApiData f data =
+    let
+        showErr err =
+            case err of
+                NotFound -> "Not found"
+                Other s -> s
+    in
+    case data of
+        NotAsked ->
+            div [] [ text "not asked" ]
+
+        Loading ->
+            div [] [ text "loading..." ]
+
+        Failure e ->
+            div [] [text <| showErr e]
+
+        Success a ->
+            f a
+
+
 action : String -> Route -> Html Msg
 action label route =
     Html.a [onClick (NavigateTo route), class "action"] [text label]
@@ -101,7 +123,7 @@ viewForm rec =
 view : Model -> Html Msg
 view model =
     case model.route of
-        RtList -> viewWebData viewList model.passwords
+        RtList -> viewApiData viewList model.passwords
         RtNew -> viewForm model.form
         RtEdit name -> viewForm model.form
         RtNotFound path -> div [] [text ("Not found:" ++ path)]

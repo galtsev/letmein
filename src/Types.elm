@@ -1,12 +1,20 @@
-module Types exposing (Msg(..), FormMsg(..), Model, emptyModel)
+module Types exposing (Msg(..), FormMsg(..), ApiError(..), Model, emptyModel, errToString)
 
 import RemoteData exposing (RemoteData(..), WebData)
 import Navigation exposing (Location)
 import PwdRec exposing (PwdRec)
 import Route exposing (Route(..))
 
+type ApiError = NotFound | Other String
+
+errToString : ApiError -> String
+errToString err =
+    case err of
+        NotFound -> "Not found"
+        Other s -> s
+
 type alias Model =
-    { passwords : WebData (List PwdRec)
+    { passwords : RemoteData ApiError (List PwdRec)
     , route : Route
     , form : PwdRec
     }
@@ -26,7 +34,7 @@ type FormMsg =
     | FmComment String
 
 type Msg
-    = PasswordsResponse (WebData (List PwdRec))
+    = PasswordsResponse (Result ApiError String)
     | RouteTo Location
     | NavigateTo Route
     | MsgForm FormMsg

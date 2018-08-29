@@ -1,16 +1,20 @@
 module Update exposing (update)
 
-import RemoteData
+import RemoteData exposing (RemoteData(..))
 import Navigation exposing (newUrl)
 
-import Types exposing (Msg(..), FormMsg(..), Model)
+import Types exposing (Msg(..), FormMsg(..), ApiError(..), Model)
 import PwdRec exposing (PwdRec)
 import Route exposing (Route(..), toHash, parseLocation)
+import Json.Decode as D
+import Json.Encode as E
+import Api
 
 
 routeChanged : Route -> Model -> Model
 routeChanged route model =
     let
+        findRec : String -> List PwdRec -> PwdRec
         findRec name lst =
             case lst of
                 []  -> PwdRec.empty
@@ -20,7 +24,7 @@ routeChanged route model =
                         else findRec name xs
         findRecX name pwds =
             case pwds of
-                RemoteData.Success p -> findRec name p
+                Success p -> findRec name p
                 _ -> PwdRec.empty
     in
     case route of
@@ -41,7 +45,16 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         PasswordsResponse d ->
-            ( { model | passwords = d }, Cmd.none )
+            let
+                decode : String -> Result ApiError (List PwdRec)
+                decode json = D.decodeString (D.list PwdRec.decoder) json
+                    |> Result.mapError Other
+
+                pwds : RemoteData ApiError (List PwdRec)
+                pwds = Result.andThen decode d
+                    |> RemoteData.fromResult
+            in
+            ( { model | passwords = pwds }, Cmd.none )
         RouteTo location ->
             let
                 newRoute = parseLocation location
@@ -64,5 +77,18 @@ update msg model =
             ({model|passwords=newPasswords, route = RtList}, Cmd.none)
         Debug str -> Debug.log str (model, Cmd.none)
         Upload ->
-            (model, PwdRec.putPasswords Debug <| RemoteData.withDefault [] model.passwords)
+            let
+                jsonPwds : String
+                jsonPwds = RemoteData.withDefault [] model.passwords
+                    |> List.map PwdRec.encode
+                    |> E.list
+                    |> E.encode 2
+                dumpRes : Result ApiError String -> String
+                dumpRes r =
+                    case r of
+                        Ok s -> s
+                        Err e -> Types.errToString e
+                cmd = Api.put (dumpRes >> Debug) "passwords.json" jsonPwds
+            in
+            (model, cmd)
 
