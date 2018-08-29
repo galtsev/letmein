@@ -7,7 +7,8 @@ import Http exposing (Error(..))
 import RemoteData exposing (RemoteData(..), WebData)
 
 
-import Man exposing (Msg(..), FormMsg(..), Route(..), Model)
+import Types exposing (Msg(..), FormMsg(..), Model)
+import Route exposing (Route(..))
 import PwdRec exposing (PwdRec)
 
 

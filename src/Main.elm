@@ -1,8 +1,11 @@
 module Main exposing (main)
 
 import Navigation
-import Man exposing (Msg(RouteTo), Model, init, update)
+import Types exposing (Msg(RouteTo), Model)
+import Update exposing (update)
 import View exposing (view)
+import Init exposing (init)
+
 
 
 main : Program Never Model Msg

@@ -1,67 +1,11 @@
-module Man exposing (Msg(..), Route(..), FormMsg(..), Model, update, init)
+module Update exposing (update)
 
-import Http exposing (Error(..))
-import RemoteData exposing (RemoteData(..), WebData)
-import Navigation exposing (Location, newUrl)
-import UrlParser as U exposing (Parser, top, s, (</>))
-import Debug
+import RemoteData
+import Navigation exposing (newUrl)
+
+import Types exposing (Msg(..), FormMsg(..), Model)
 import PwdRec exposing (PwdRec)
-
-
-type Route =
-    RtList
-    | RtNew
-    | RtEdit String
-    | RtNotFound String
-
-toHash : Route -> String
-toHash route =
-    case route of
-        RtList -> "#"
-        RtNew -> "#new"
-        RtEdit name -> "#item/" ++ name ++ "/edit"
-        RtNotFound _ -> "#notfound"
-
-locationParser : Parser (Route -> a) a
-locationParser = U.oneOf
-    [ U.map RtList top
-    , U.map RtNew (s "new")
-    , U.map RtEdit (s "item" </> U.string </> s "edit")
-    ]
-
-parseLocation : Location -> Route
-parseLocation loc = 
-    Maybe.withDefault (RtNotFound loc.hash)
-    <| U.parseHash locationParser loc
-
-type alias Model =
-    { passwords : WebData (List PwdRec)
-    , route : Route
-    , form : PwdRec
-    }
-
-emptyModel : Model
-emptyModel =
-    { passwords = NotAsked
-    , route = RtList
-    , form = PwdRec.empty
-    }
-
-type FormMsg =
-    FmName String
-    | FmUrl String
-    | FmPassword String
-    | FmGroup String
-    | FmComment String
-
-type Msg
-    = PasswordsResponse (WebData (List PwdRec))
-    | RouteTo Location
-    | NavigateTo Route
-    | MsgForm FormMsg
-    | SaveForm
-    | Debug String
-    | Upload
+import Route exposing (Route(..), toHash, parseLocation)
 
 
 routeChanged : Route -> Model -> Model
@@ -76,17 +20,13 @@ routeChanged route model =
                         else findRec name xs
         findRecX name pwds =
             case pwds of
-                Success p -> findRec name p
+                RemoteData.Success p -> findRec name p
                 _ -> PwdRec.empty
     in
     case route of
         RtNew -> { model | form = PwdRec.empty }
         RtEdit name -> {model | form = findRecX name model.passwords}
         _ -> model
-
-init : Location -> ( Model, Cmd Msg )
-init location =
-    ( { emptyModel | route = parseLocation location }, PwdRec.getPasswords PasswordsResponse)
 
 updateForm : FormMsg -> PwdRec -> PwdRec
 updateForm msg rec =
