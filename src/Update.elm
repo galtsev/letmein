@@ -102,13 +102,13 @@ update msg model =
                     |> List.map PwdRec.encode
                     |> E.list
                     |> E.encode 2
-                encryptedPwds = Cr.justEncrypt seed model.masterPwd jsonPwds
+                    |> Cr.justEncrypt seed model.masterPwd
                 dumpRes : Result ApiError String -> String
                 dumpRes r =
                     case r of
                         Ok s -> s
                         Err e -> Types.errToString e
-                cmd = Api.put (dumpRes >> Debug) "passwords.json" encryptedPwds
+                cmd = Api.put (dumpRes >> Debug) "passwords.json" jsonPwds
             in
             (model, cmd)
 
