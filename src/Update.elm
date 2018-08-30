@@ -93,7 +93,7 @@ update msg model =
                         RtEdit name -> RemoteData.map (updatePwdList name model.form) model.passwords
                         _ -> model.passwords
             in
-            ({model|passwords=newPasswords, route = RtList}, Cmd.none)
+            ({model|passwords=newPasswords}, newUrl (toHash RtList))
         Debug str -> Debug.log str (model, Cmd.none)
         Upload ->
             let

@@ -6,54 +6,10 @@ import Html.Events exposing (onClick, onInput)
 import Http exposing (Error(..))
 import RemoteData exposing (RemoteData(..), WebData)
 
-
 import Types exposing (Msg(..), FormMsg(..), Model, ApiError(..))
 import Route exposing (Route(..))
 import PwdRec exposing (PwdRec)
 
-
-viewWebData : (a -> Html Msg) -> WebData a -> Html Msg
-viewWebData f wd =
-    let
-        errMsg s =
-            div [] [ text s ]
-
-        showErr e =
-            case e of
-                BadUrl s ->
-                    errMsg ("Bad Url " ++ s)
-
-                Timeout ->
-                    errMsg "Timed out"
-
-                NetworkError ->
-                    errMsg "Network error"
-
-                BadStatus resp ->
-                    errMsg
-                        ("Error GET "
-                            ++ resp.url
-                            ++ ": "
-                            ++ toString resp.status.code
-                            ++ " - "
-                            ++ resp.status.message
-                        )
-
-                BadPayload s resp ->
-                    errMsg ("Error - Bad Payload:" ++ s)
-    in
-    case wd of
-        NotAsked ->
-            div [] [ text "not asked" ]
-
-        Loading ->
-            div [] [ text "loading..." ]
-
-        Failure e ->
-            showErr e
-
-        Success a ->
-            f a
 
 viewApiData : (a -> Html Msg) -> RemoteData ApiError a -> Html Msg
 viewApiData f data =
@@ -71,7 +27,7 @@ viewApiData f data =
             div [] [ text "loading..." ]
 
         Failure e ->
-            div [] [text <| showErr e]
+            div [] [text <| Types.errToString e]
 
         Success a ->
             f a
@@ -127,4 +83,3 @@ view model =
         RtNew -> viewForm model.form
         RtEdit name -> viewForm model.form
         RtNotFound path -> div [] [text ("Not found:" ++ path)]
-
