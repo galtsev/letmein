@@ -4,33 +4,10 @@ import Html exposing (Html, div, text, input, button)
 import Html.Attributes exposing (value, href, class)
 import Html.Events exposing (onClick, onInput)
 import Http exposing (Error(..))
-import RemoteData exposing (RemoteData(..), WebData)
 
-import Types exposing (Msg(..), FormMsg(..), Model, ApiError(..))
+import Types exposing (Msg(..), FormMsg(..), Model, ApiError(..), InitState(..))
 import Route exposing (Route(..))
 import PwdRec exposing (PwdRec)
-
-
-viewApiData : (a -> Html Msg) -> RemoteData ApiError a -> Html Msg
-viewApiData f data =
-    let
-        showErr err =
-            case err of
-                NotFound -> "Not found"
-                Other s -> s
-    in
-    case data of
-        NotAsked ->
-            div [] [ text "not asked" ]
-
-        Loading ->
-            div [] [ text "loading..." ]
-
-        Failure e ->
-            div [] [text <| Types.errToString e]
-
-        Success a ->
-            f a
 
 
 action : String -> Route -> Html Msg
@@ -75,11 +52,37 @@ viewForm rec =
         , div [] [button [onClick SaveForm] [text "save"]]
         ]
 
+viewLogin : String -> String -> Html Msg
+viewLogin pwd label =
+    div []
+        [ div [] [text label]
+        , div []
+            [ text "Password:"
+            , input [value pwd, onInput FmLogin] []
+            , button [onClick TryPassword] [text "login"]
+            ]
+        ]
 
-view : Model -> Html Msg
-view model =
+viewReady : Model -> Html Msg
+viewReady model =
     case model.route of
-        RtList -> viewApiData viewList model.passwords
+        RtList -> viewList model.passwords
         RtNew -> viewForm model.form
         RtEdit name -> viewForm model.form
         RtNotFound path -> div [] [text ("Not found:" ++ path)]
+
+view : Model -> Html Msg
+view model =
+    case model.initState of
+        Loading -> div [] [text "Loading ..."]
+        Missing -> viewLogin model.formPassword "Creating vault. Enter new password"
+        LoadingFailed err -> div [] [text <| "Error loading passwords: " ++ err]
+        Sealed flag data ->
+            let
+                label =
+                    if flag
+                        then "Bad password, try again."
+                        else "Enter password"
+            in
+            viewLogin model.formPassword label
+        Ready _ -> viewReady model

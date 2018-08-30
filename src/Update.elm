@@ -3,7 +3,7 @@ module Update exposing (update)
 import RemoteData exposing (RemoteData(..))
 import Navigation exposing (newUrl)
 
-import Types exposing (Msg(..), FormMsg(..), ApiError(..), Model)
+import Types exposing (Msg(..), FormMsg(..), ApiError(..), InitState(..), Model)
 import PwdRec exposing (PwdRec)
 import Route exposing (Route(..), toHash, parseLocation)
 import Json.Decode as D
@@ -27,14 +27,10 @@ routeChanged route model =
                     if x.name == name
                         then x
                         else findRec name xs
-        findRecX name pwds =
-            case pwds of
-                Success p -> findRec name p
-                _ -> PwdRec.empty
     in
     case route of
         RtNew -> { model | form = PwdRec.empty }
-        RtEdit name -> {model | form = findRecX name model.passwords}
+        RtEdit name -> {model | form = findRec name model.passwords}
         _ -> model
 
 updateForm : FormMsg -> PwdRec -> PwdRec
@@ -46,34 +42,41 @@ updateForm msg rec =
         FmGroup s -> {rec | grp = s}
         FmComment s -> {rec | comment = s}
 
+decrypt : String -> String -> Result String (List PwdRec)
+decrypt pwd data =
+    data
+    |> Cr.decrypt pwd
+    |> Result.andThen (D.decodeString (D.list PwdRec.decoder))
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         PasswordsResponse d ->
             let
-                decrypt : String -> Result ApiError String
-                decrypt src = Cr.decrypt model.masterPwd src
-                    |> Result.mapError Other
-
-                decode : String -> Result ApiError (List PwdRec)
-                decode json = D.decodeString (D.list PwdRec.decoder) json
-                    |> Result.mapError Other
-
-                mapMissing : Result ApiError (List PwdRec) -> Result ApiError (List PwdRec)
-                mapMissing r =
-                    case r of
-                        Err NotFound -> Ok []
-                        _ -> r
-
-                pwds : RemoteData ApiError (List PwdRec)
-                pwds =
-                    Result.andThen decrypt d
-                    |> Result.andThen decode
-                    |> mapMissing
-                    |> RemoteData.fromResult
-
+                newState =
+                    case d of
+                        Err NotFound -> Missing
+                        Err (Other err) -> LoadingFailed err
+                        Ok data -> Sealed False data
             in
-            ( { model | passwords = pwds }, Cmd.none )
+            ( { model | initState = newState}, Cmd.none )
+        FmLogin pwd ->
+            ( { model | formPassword = pwd}, Cmd.none)
+        TryPassword ->
+            let
+                pwd = model.formPassword
+            in
+            case model.initState of
+                Sealed _ data ->
+                    case decrypt pwd data of
+                        Ok pwds ->
+                            ( { model | passwords = pwds, initState = Ready pwd}, Cmd.none)
+                        Err str ->
+                            ( { model | initState = Sealed True data, formPassword = ""}, Cmd.none)
+                Missing ->
+                    ( { model | passwords = [], initState = Ready pwd}, Cmd.none)
+                _ -> (model, Cmd.none)
+
         RouteTo location ->
             let
                 newRoute = parseLocation location
@@ -86,23 +89,26 @@ update msg model =
             ( {model | form = updateForm fmsg model.form}, Cmd.none)
         SaveForm ->
             let
-                updatePwdList k v = List.map (\itm -> if itm.name==k then v else itm)
                 newPasswords =
                     case model.route of
-                        RtNew -> RemoteData.map ((::) model.form) model.passwords
-                        RtEdit name -> RemoteData.map (updatePwdList name model.form) model.passwords
+                        RtNew -> model.form::model.passwords
+                        RtEdit name -> List.map (\itm -> if itm.name==name then model.form else itm) model.passwords
                         _ -> model.passwords
             in
             ({model|passwords=newPasswords}, newUrl (toHash RtList))
         Debug str -> Debug.log str (model, Cmd.none)
         Upload ->
             let
+                pwd = case model.initState of
+                    Ready p -> p
+                    _ -> ""
                 jsonPwds : String
-                jsonPwds = RemoteData.withDefault [] model.passwords
+                jsonPwds = 
+                    model.passwords
                     |> List.map PwdRec.encode
                     |> E.list
                     |> E.encode 2
-                    |> Cr.justEncrypt seed model.masterPwd
+                    |> Cr.justEncrypt seed pwd
                 dumpRes : Result ApiError String -> String
                 dumpRes r =
                     case r of

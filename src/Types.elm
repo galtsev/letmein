@@ -1,6 +1,5 @@
-module Types exposing (Msg(..), FormMsg(..), ApiError(..), Model, emptyModel, errToString)
+module Types exposing (Msg(..), FormMsg(..), ApiError(..), InitState(..), Model, emptyModel, errToString)
 
-import RemoteData exposing (RemoteData(..), WebData)
 import Navigation exposing (Location)
 import PwdRec exposing (PwdRec)
 import Route exposing (Route(..))
@@ -13,19 +12,28 @@ errToString err =
         NotFound -> "Not found"
         Other s -> s
 
+type InitState = 
+    Loading 
+    | Missing
+    | LoadingFailed String
+    | Sealed Bool String  -- Sealed <decryption failed> <encrypted data>
+    | Ready String  -- Ready <password>
+
 type alias Model =
-    { passwords : RemoteData ApiError (List PwdRec)
+    { passwords : List PwdRec
     , route : Route
     , form : PwdRec
-    , masterPwd : String
+    , initState : InitState
+    , formPassword : String
     }
 
 emptyModel : Model
 emptyModel =
-    { passwords = NotAsked
+    { passwords = []
     , route = RtList
     , form = PwdRec.empty
-    , masterPwd = "letmein"
+    , initState = Loading
+    , formPassword = ""
     }
 
 type FormMsg =
@@ -37,6 +45,8 @@ type FormMsg =
 
 type Msg
     = PasswordsResponse (Result ApiError String)
+    | FmLogin String
+    | TryPassword
     | RouteTo Location
     | NavigateTo Route
     | MsgForm FormMsg
