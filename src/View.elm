@@ -1,7 +1,7 @@
 module View exposing (view)
 
 import Html exposing (Html, div, text, input, button)
-import Html.Attributes exposing (value, href, class)
+import Html.Attributes exposing (value, href, class, type_)
 import Html.Events exposing (onClick, onInput)
 import Http exposing (Error(..))
 
@@ -58,7 +58,7 @@ viewLogin pwd label =
         [ div [] [text label]
         , div []
             [ text "Password:"
-            , input [value pwd, onInput FmLogin] []
+            , input [value pwd, type_ "password", onInput FmLogin] []
             , button [onClick TryPassword] [text "login"]
             ]
         ]
