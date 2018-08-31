@@ -25,6 +25,7 @@ type alias Model =
     , form : PwdRec
     , initState : InitState
     , formPassword : String
+    , selectedItem : Maybe String
     }
 
 emptyModel : Model
@@ -34,6 +35,7 @@ emptyModel =
     , form = PwdRec.empty
     , initState = Loading
     , formPassword = ""
+    , selectedItem = Nothing
     }
 
 type FormMsg =
@@ -53,4 +55,6 @@ type Msg
     | SaveForm
     | Debug String
     | Upload
+    | CopyToClipboard String
+    | SelectItem String
 

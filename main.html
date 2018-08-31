@@ -14,6 +14,11 @@
         app.ports.get.subscribe(function(key){
             app.ports.getSub.send(localStorage.getItem(key))
         })
+        app.ports.writeClipboard.subscribe(function(s){
+            navigator.clipboard.writeText(s).catch(function(err){
+                console.log(err)
+            })
+        })
     </script>
 </body>
 </html>

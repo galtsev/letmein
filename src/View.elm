@@ -10,15 +10,28 @@ import Route exposing (Route(..))
 import PwdRec exposing (PwdRec)
 
 
-action : String -> Route -> Html Msg
-action label route =
+link : String -> Route -> Html Msg
+link label route =
     Html.a [onClick (NavigateTo route), class "action"] [text label]
 
-viewList : List PwdRec -> Html Msg
-viewList pwds =
+action : String -> Msg -> Html Msg
+action label msg =
+    Html.a [onClick msg, class "action"] [text label]
+
+viewList : List PwdRec -> Maybe String -> Html Msg
+viewList pwds selected =
     let
+        actions r =
+            div []
+                [ action "copy password" <| CopyToClipboard r.password
+                ]
         viewRec r =
-            div [] [ action r.name <| RtEdit r.name]
+            div [] 
+                [ link r.name <| RtEdit r.name
+                , text " | "
+                , action "actions" <| SelectItem r.name
+                , if selected == Just r.name then actions r else text ""
+                ]
         lst = div [] <| List.map viewRec pwds
     in
     div []
@@ -47,7 +60,7 @@ viewForm rec =
                 ]
     in
     div []
-        [ div [] [ action "<- Back to list" RtList ]
+        [ div [] [ link "<- Back to list" RtList ]
         , tbl
         , div [] [button [onClick SaveForm] [text "save"]]
         ]
@@ -66,7 +79,7 @@ viewLogin pwd label =
 viewReady : Model -> Html Msg
 viewReady model =
     case model.route of
-        RtList -> viewList model.passwords
+        RtList -> viewList model.passwords model.selectedItem
         RtNew -> viewForm model.form
         RtEdit name -> viewForm model.form
         RtNotFound path -> div [] [text ("Not found:" ++ path)]

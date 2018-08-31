@@ -11,6 +11,7 @@ import Json.Encode as E
 import Api
 import Random
 import Crypto.Strings as Cr
+import Ports
 
 seed : Random.Seed
 seed = Random.initialSeed  0
@@ -117,4 +118,13 @@ update msg model =
                 cmd = Api.put (dumpRes >> Debug) "passwords.json" jsonPwds
             in
             (model, cmd)
+        CopyToClipboard s -> (model, Ports.writeClipboard s)
+        SelectItem name ->
+            let
+                selected =
+                    if model.selectedItem == Just name
+                        then Nothing
+                        else Just name
+            in
+            ({model|selectedItem = selected}, Cmd.none)
 
