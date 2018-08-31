@@ -2,6 +2,7 @@ module Api exposing (get, put)
 
 import Http exposing (Error(..))
 import Types exposing (Msg(..), ApiError(..))
+import Ports
 
 mapError : Error -> ApiError
 mapError err =
@@ -15,16 +16,22 @@ mapError err =
                 _ -> Other resp.status.message
         BadPayload s _ -> Other s
 
-
 get : (Result ApiError String -> Msg) -> String -> Cmd Msg
-get fn key =
+get _ key = Ports.get key
+
+put : (Result ApiError String -> Msg) -> String -> String -> Cmd Msg
+put _ key value = Ports.put (key, value)
+
+
+getX : (Result ApiError String -> Msg) -> String -> Cmd Msg
+getX fn key =
     let
         req = Http.getString ("data/" ++ key)
     in
     Http.send (Result.mapError mapError >> fn) req
 
-put : (Result ApiError String -> Msg) -> String -> String -> Cmd Msg
-put fn key value =
+putX : (Result ApiError String -> Msg) -> String -> String -> Cmd Msg
+putX fn key value =
     let
         url = "data/" ++ key
         req = Http.request

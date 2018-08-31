@@ -5,7 +5,7 @@ import Types exposing (Msg(RouteTo), Model)
 import Update exposing (update)
 import View exposing (view)
 import Init exposing (init)
-
+import Subscriptions exposing (gotPasswords)
 
 
 main : Program Never Model Msg
@@ -14,5 +14,5 @@ main =
         { init = init
         , update = update
         , view = view
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = \_ -> gotPasswords
         }

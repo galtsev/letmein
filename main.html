@@ -4,6 +4,16 @@
   <script src="main.js"></script>
 </head>
 <body>
-  <script>var app = Elm.Main.fullscreen();</script>
+    <script>
+        var app = Elm.Main.fullscreen();
+        app.ports.put.subscribe(function(kv){
+            var key = kv[0]
+            var value = kv[1]
+            localStorage.setItem(key, value)
+        })
+        app.ports.get.subscribe(function(key){
+            app.ports.getSub.send(localStorage.getItem(key))
+        })
+    </script>
 </body>
 </html>
