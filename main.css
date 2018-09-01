@@ -46,3 +46,10 @@ button {
     font-family: sans-serif;
     border-radius: 2px;
 }
+
+.header {
+    padding: 8px;
+    border-radius: 3px;
+    border: solid 1px black;
+    background-color: #f9e2ff;
+}

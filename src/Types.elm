@@ -52,16 +52,21 @@ type FormMsg =
     | FmComment String
 
 type Msg
+    -- login/unseal flow
     = PasswordsResponse (Result ApiError String)
+    | GotSeed Time.Time
     | FmLogin String
     | TryPassword
+    -- Navigation
     | RouteTo Location
     | NavigateTo Route
+    -- password add/edit form
     | MsgForm FormMsg
     | SaveForm
-    | Debug String
-    | CopyToClipboard String
+    -- password list
     | SelectItem String
     | DeleteItem String
-    | GotSeed Time.Time
+    -- misc
+    | Debug String
+    | CopyToClipboard String
 

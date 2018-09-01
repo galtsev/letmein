@@ -2,4 +2,7 @@ data/
 elm-stuff/
 index.html
 main.js
+*.sublime-project
+*.sublime-workspace
+
 
