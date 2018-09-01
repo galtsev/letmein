@@ -100,6 +100,6 @@ view model =
                             else "Enter password"
                 in
                 viewLogin model.formPassword label
-            Ready _ -> viewReady model
+            Ready -> viewReady model
     in
     div [class "content"] [content]

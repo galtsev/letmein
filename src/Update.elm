@@ -71,11 +71,11 @@ update msg model =
                 Sealed _ data ->
                     case decrypt pwd data of
                         Ok pwds ->
-                            ( { model | passwords = pwds, initState = Ready pwd}, Cmd.none)
+                            ( { model | passwords = pwds, initState = Ready, masterPassword = pwd}, Cmd.none)
                         Err str ->
                             ( { model | initState = Sealed True data, formPassword = ""}, Cmd.none)
                 Missing ->
-                    ( { model | passwords = [], initState = Ready pwd}, Cmd.none)
+                    ( { model | passwords = [], initState = Ready, masterPassword = pwd}, Cmd.none)
                 _ -> (model, Cmd.none)
 
         RouteTo location ->
@@ -100,16 +100,13 @@ update msg model =
         Debug str -> Debug.log str (model, Cmd.none)
         Upload ->
             let
-                pwd = case model.initState of
-                    Ready p -> p
-                    _ -> ""
                 jsonPwds : String
                 jsonPwds = 
                     model.passwords
                     |> List.map PwdRec.encode
                     |> E.list
                     |> E.encode 2
-                    |> Cr.justEncrypt seed pwd
+                    |> Cr.justEncrypt seed model.masterPassword
                 dumpRes : Result ApiError String -> String
                 dumpRes r =
                     case r of

@@ -17,10 +17,11 @@ type InitState =
     | Missing
     | LoadingFailed String
     | Sealed Bool String  -- Sealed <decryption failed> <encrypted data>
-    | Ready String  -- Ready <password>
+    | Ready
 
 type alias Model =
     { passwords : List PwdRec
+    , masterPassword: String
     , route : Route
     , form : PwdRec
     , initState : InitState
@@ -31,6 +32,7 @@ type alias Model =
 emptyModel : Model
 emptyModel =
     { passwords = []
+    , masterPassword = ""
     , route = RtList
     , form = PwdRec.empty
     , initState = Loading
