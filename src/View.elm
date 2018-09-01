@@ -21,7 +21,10 @@ action label msg =
 
 backToList : Html Msg
 backToList =
-    div [ class "header" ] [ link "<- Back to list" RtList ]
+    div [ class "header" ]
+        [ Html.i [ class "fa fa-arrow-left action" ] []
+        , link " back to list" RtList
+        ]
 
 
 viewList : List PwdRec -> Maybe String -> Html Msg
@@ -51,7 +54,7 @@ viewList pwds selected =
     in
     div []
         [ div [ class "header" ] [ link "Menu" RtMenu ]
-        , div [ class "rec" ] [ action "+ New" <| NavigateTo RtNew ]
+        , div [ class "rec" ] [ Html.i [ class "fa fa-plus action" ] [], action " New" <| NavigateTo RtNew ]
         , lst
         ]
 
