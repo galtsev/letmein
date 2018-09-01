@@ -127,4 +127,9 @@ update msg model =
                         else Just name
             in
             ({model|selectedItem = selected}, Cmd.none)
+        DeleteItem name ->
+            let
+                newPasswords = List.filter (\r->r.name/=name) model.passwords
+            in
+            ( {model | passwords = newPasswords, selectedItem = Nothing}, Cmd.none)
 

@@ -57,4 +57,5 @@ type Msg
     | Upload
     | CopyToClipboard String
     | SelectItem String
+    | DeleteItem String
 

@@ -22,11 +22,12 @@ viewList : List PwdRec -> Maybe String -> Html Msg
 viewList pwds selected =
     let
         actions r =
-            div []
+            div [class "rec-actions"] <| List.intersperse (text " | ")
                 [ action "copy password" <| CopyToClipboard r.password
+                , action "delete" <| DeleteItem r.name
                 ]
         viewRec r =
-            div [] 
+            div [class "rec"] 
                 [ link r.name <| RtEdit r.name
                 , text " | "
                 , action "actions" <| SelectItem r.name
@@ -45,7 +46,7 @@ viewForm : PwdRec -> Html Msg
 viewForm rec =
     let
         row label fld =
-            Html.tr []
+            Html.tr [class "form-row"]
                 [ Html.td [] [text label]
                 , Html.td [] [fld]
                 ]
@@ -86,16 +87,19 @@ viewReady model =
 
 view : Model -> Html Msg
 view model =
-    case model.initState of
-        Loading -> div [] [text "Loading ..."]
-        Missing -> viewLogin model.formPassword "Creating vault. Enter new password"
-        LoadingFailed err -> div [] [text <| "Error loading passwords: " ++ err]
-        Sealed flag data ->
-            let
-                label =
-                    if flag
-                        then "Bad password, try again."
-                        else "Enter password"
-            in
-            viewLogin model.formPassword label
-        Ready _ -> viewReady model
+    let
+        content = case model.initState of
+            Loading -> div [] [text "Loading ..."]
+            Missing -> viewLogin model.formPassword "Creating vault. Enter new password"
+            LoadingFailed err -> div [] [text <| "Error loading passwords: " ++ err]
+            Sealed flag data ->
+                let
+                    label =
+                        if flag
+                            then "Bad password, try again."
+                            else "Enter password"
+                in
+                viewLogin model.formPassword label
+            Ready _ -> viewReady model
+    in
+    div [class "content"] [content]
