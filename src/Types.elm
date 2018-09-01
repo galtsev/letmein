@@ -3,6 +3,8 @@ module Types exposing (Msg(..), FormMsg(..), ApiError(..), InitState(..), Model,
 import Navigation exposing (Location)
 import PwdRec exposing (PwdRec)
 import Route exposing (Route(..))
+import Random
+import Time
 
 type ApiError = NotFound | Other String
 
@@ -27,6 +29,7 @@ type alias Model =
     , initState : InitState
     , formPassword : String
     , selectedItem : Maybe String
+    , seed : Random.Seed
     }
 
 emptyModel : Model
@@ -38,6 +41,7 @@ emptyModel =
     , initState = Loading
     , formPassword = ""
     , selectedItem = Nothing
+    , seed = Random.initialSeed 0
     }
 
 type FormMsg =
@@ -59,4 +63,5 @@ type Msg
     | CopyToClipboard String
     | SelectItem String
     | DeleteItem String
+    | GotSeed Time.Time
 

@@ -10,11 +10,9 @@ import Json.Decode as D
 import Json.Encode as E
 import Api
 import Random
+import Time
 import Crypto.Strings as Cr
 import Ports
-
-seed : Random.Seed
-seed = Random.initialSeed  0
 
 
 routeChanged : Route -> Model -> Model
@@ -95,9 +93,9 @@ update msg model =
                         RtNew -> model.form::model.passwords
                         RtEdit name -> List.map (\itm -> if itm.name==name then model.form else itm) model.passwords
                         _ -> model.passwords
-                newModel = {model|passwords = newPasswords}
+                (newModel, updateCmd) = Api.update {model|passwords = newPasswords}
             in
-            newModel ! [Api.update newModel, newUrl (toHash RtList)]
+            newModel ! [updateCmd, newUrl (toHash RtList)]
         Debug str -> Debug.log str (model, Cmd.none)
         CopyToClipboard s -> (model, Ports.writeClipboard s)
         SelectItem name ->
@@ -113,4 +111,6 @@ update msg model =
                 newPasswords = List.filter (\r->r.name/=name) model.passwords
                 newModel = {model | passwords = newPasswords, selectedItem = Nothing}
             in
-            newModel ! [Api.update newModel]
+            Api.update newModel
+        GotSeed tm ->
+            {model|seed = Random.initialSeed (truncate (Time.inMilliseconds tm))} ! [Cmd.none]

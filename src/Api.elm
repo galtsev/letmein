@@ -27,26 +27,28 @@ put : (Result ApiError String -> Msg) -> String -> String -> Cmd Msg
 put _ key value = Ports.put (key, value)
 
 
-seed : Random.Seed
-seed = Random.initialSeed  0
-
-update : Model -> Cmd Msg
+update : Model -> (Model, Cmd Msg)
 update model =
     let
-        jsonPwds : String
+        jsonPwds : Result String (String, Random.Seed)
         jsonPwds = 
             model.passwords
             |> List.map PwdRec.encode
             |> E.list
             |> E.encode 2
-            |> Cr.justEncrypt seed model.masterPassword
+            |> Cr.encrypt model.seed model.masterPassword
         dumpRes : Result ApiError String -> String
         dumpRes r =
             case r of
                 Ok s -> s
                 Err e -> Types.errToString e
     in
-    put (dumpRes >> Debug) "passwords.json" jsonPwds
+    case jsonPwds of
+        Ok (chiper, newSeed) ->
+            {model|seed = newSeed} ! [put (dumpRes >> Debug) "passwords.json" chiper]
+        Err err ->
+        -- TODO: show error
+            (model, Cmd.none)
 
 getX : (Result ApiError String -> Msg) -> String -> Cmd Msg
 getX fn key =
