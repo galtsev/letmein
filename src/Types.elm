@@ -56,7 +56,6 @@ type Msg
     | MsgForm FormMsg
     | SaveForm
     | Debug String
-    | Upload
     | CopyToClipboard String
     | SelectItem String
     | DeleteItem String

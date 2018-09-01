@@ -1,8 +1,12 @@
-module Api exposing (get, put)
+module Api exposing (get, put, update)
 
 import Http exposing (Error(..))
-import Types exposing (Msg(..), ApiError(..))
+import Types exposing (Msg(..), ApiError(..), Model)
+import Json.Encode as E
+import PwdRec
+import Crypto.Strings as Cr
 import Ports
+import Random
 
 mapError : Error -> ApiError
 mapError err =
@@ -22,6 +26,27 @@ get _ key = Ports.get key
 put : (Result ApiError String -> Msg) -> String -> String -> Cmd Msg
 put _ key value = Ports.put (key, value)
 
+
+seed : Random.Seed
+seed = Random.initialSeed  0
+
+update : Model -> Cmd Msg
+update model =
+    let
+        jsonPwds : String
+        jsonPwds = 
+            model.passwords
+            |> List.map PwdRec.encode
+            |> E.list
+            |> E.encode 2
+            |> Cr.justEncrypt seed model.masterPassword
+        dumpRes : Result ApiError String -> String
+        dumpRes r =
+            case r of
+                Ok s -> s
+                Err e -> Types.errToString e
+    in
+    put (dumpRes >> Debug) "passwords.json" jsonPwds
 
 getX : (Result ApiError String -> Msg) -> String -> Cmd Msg
 getX fn key =

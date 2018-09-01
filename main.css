@@ -10,7 +10,7 @@ body {
 .action {
     cursor: pointer;
     color: blue;
-    text-decoration: underline;
+    /*text-decoration: underline;*/
 }
 
 .content {

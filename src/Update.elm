@@ -95,26 +95,10 @@ update msg model =
                         RtNew -> model.form::model.passwords
                         RtEdit name -> List.map (\itm -> if itm.name==name then model.form else itm) model.passwords
                         _ -> model.passwords
+                newModel = {model|passwords = newPasswords}
             in
-            ({model|passwords=newPasswords}, newUrl (toHash RtList))
+            newModel ! [Api.update newModel, newUrl (toHash RtList)]
         Debug str -> Debug.log str (model, Cmd.none)
-        Upload ->
-            let
-                jsonPwds : String
-                jsonPwds = 
-                    model.passwords
-                    |> List.map PwdRec.encode
-                    |> E.list
-                    |> E.encode 2
-                    |> Cr.justEncrypt seed model.masterPassword
-                dumpRes : Result ApiError String -> String
-                dumpRes r =
-                    case r of
-                        Ok s -> s
-                        Err e -> Types.errToString e
-                cmd = Api.put (dumpRes >> Debug) "passwords.json" jsonPwds
-            in
-            (model, cmd)
         CopyToClipboard s -> (model, Ports.writeClipboard s)
         SelectItem name ->
             let
@@ -127,6 +111,6 @@ update msg model =
         DeleteItem name ->
             let
                 newPasswords = List.filter (\r->r.name/=name) model.passwords
+                newModel = {model | passwords = newPasswords, selectedItem = Nothing}
             in
-            ( {model | passwords = newPasswords, selectedItem = Nothing}, Cmd.none)
-
+            newModel ! [Api.update newModel]

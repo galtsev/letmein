@@ -36,8 +36,7 @@ viewList pwds selected =
         lst = div [] <| List.map viewRec pwds
     in
     div []
-        [ button [onClick <| NavigateTo RtNew] [text "New"]
-        , button [onClick Upload] [text "Upload"]
+        [ div [class "rec"] [action "+ New" <| NavigateTo RtNew]
         , lst
         ]
     
