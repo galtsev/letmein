@@ -19,6 +19,11 @@ action label msg =
     Html.a [ onClick msg, class "action" ] [ text label ]
 
 
+backToList : Html Msg
+backToList =
+    div [ class "header" ] [ link "<- Back to list" RtList ]
+
+
 viewList : List PwdRec -> Maybe String -> Html Msg
 viewList pwds selected =
     let
@@ -51,29 +56,31 @@ viewList pwds selected =
         ]
 
 
+formRow : String -> Html Msg -> Html Msg
+formRow label fld =
+    Html.tr [ class "form-row" ]
+        [ Html.td [] [ text label ]
+        , Html.td [] [ fld ]
+        ]
+
+
 viewForm : PwdRec -> Html Msg
 viewForm rec =
     let
-        row label fld =
-            Html.tr [ class "form-row" ]
-                [ Html.td [] [ text label ]
-                , Html.td [] [ fld ]
-                ]
-
         inp val msg =
             input [ value val, onInput (MsgForm << msg) ] []
 
         tbl =
             Html.table []
-                [ row "name" <| inp rec.name FmName
-                , row "url" <| inp rec.url FmUrl
-                , row "password" <| inp rec.password FmPassword
-                , row "group" <| inp rec.grp FmGroup
-                , row "comment" <| Html.textarea [ value rec.comment, onInput (MsgForm << FmComment) ] []
+                [ formRow "name" <| inp rec.name FmName
+                , formRow "url" <| inp rec.url FmUrl
+                , formRow "password" <| inp rec.password FmPassword
+                , formRow "group" <| inp rec.grp FmGroup
+                , formRow "comment" <| Html.textarea [ value rec.comment, onInput (MsgForm << FmComment) ] []
                 ]
     in
     div []
-        [ div [ class "header" ] [ link "<- Back to list" RtList ]
+        [ backToList
         , tbl
         , div [] [ button [ onClick SaveForm ] [ text "save" ] ]
         ]
@@ -91,11 +98,34 @@ viewLogin pwd label =
         ]
 
 
+viewChangeMasterPassword : Model -> Html Msg
+viewChangeMasterPassword model =
+    div []
+        [ backToList
+        , Html.table []
+            [ formRow "new password" <| input [ value model.formPassword, onInput FmLogin ] []
+            , Html.tr []
+                [ Html.td [] []
+                , Html.td [] [ button [ onClick (ChangeMasterPassword model.formPassword) ] [ text "Update" ] ]
+                ]
+            ]
+        ]
+
+
 viewMenu : Html Msg
 viewMenu =
+    let
+        menuItem : String -> Msg -> Html Msg
+        menuItem label msg =
+            div [ class "rec" ] [ action label msg ]
+
+        menuLink : String -> Route -> Html Msg
+        menuLink label route =
+            menuItem label <| NavigateTo route
+    in
     div []
-        [ div [ class "header" ] [ link "<- Back to list" RtList ]
-        , div [] [ text "menu" ]
+        [ backToList
+        , menuLink "Change master password" <| RtPasswordChangeForm
         ]
 
 
@@ -116,6 +146,9 @@ viewReady model =
 
         RtMenu ->
             viewMenu
+
+        RtPasswordChangeForm ->
+            viewChangeMasterPassword model
 
 
 view : Model -> Html Msg

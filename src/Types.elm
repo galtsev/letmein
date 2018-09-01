@@ -1,29 +1,38 @@
-module Types exposing (Msg(..), FormMsg(..), ApiError(..), InitState(..), Model, emptyModel, errToString)
+module Types exposing (ApiError(..), FormMsg(..), InitState(..), Model, Msg(..), emptyModel, errToString)
 
 import Navigation exposing (Location)
 import PwdRec exposing (PwdRec)
-import Route exposing (Route(..))
 import Random
+import Route exposing (Route(..))
 import Time
 
-type ApiError = NotFound | Other String
+
+type ApiError
+    = NotFound
+    | Other String
+
 
 errToString : ApiError -> String
 errToString err =
     case err of
-        NotFound -> "Not found"
-        Other s -> s
+        NotFound ->
+            "Not found"
 
-type InitState = 
-    Loading 
+        Other s ->
+            s
+
+
+type InitState
+    = Loading
     | Missing
     | LoadingFailed String
-    | Sealed Bool String  -- Sealed <decryption failed> <encrypted data>
+    | Sealed Bool String -- Sealed <decryption failed> <encrypted data>
     | Ready
+
 
 type alias Model =
     { passwords : List PwdRec
-    , masterPassword: String
+    , masterPassword : String
     , route : Route
     , form : PwdRec
     , initState : InitState
@@ -31,6 +40,7 @@ type alias Model =
     , selectedItem : Maybe String
     , seed : Random.Seed
     }
+
 
 emptyModel : Model
 emptyModel =
@@ -44,29 +54,32 @@ emptyModel =
     , seed = Random.initialSeed 0
     }
 
-type FormMsg =
-    FmName String
+
+type FormMsg
+    = FmName String
     | FmUrl String
     | FmPassword String
     | FmGroup String
     | FmComment String
 
-type Msg
+
+type
+    Msg
     -- login/unseal flow
     = PasswordsResponse (Result ApiError String)
     | GotSeed Time.Time
     | FmLogin String
     | TryPassword
-    -- Navigation
+      -- Navigation
     | RouteTo Location
     | NavigateTo Route
-    -- password add/edit form
+      -- password add/edit form
     | MsgForm FormMsg
     | SaveForm
-    -- password list
+      -- password list
     | SelectItem String
     | DeleteItem String
-    -- misc
+      -- misc
     | Debug String
     | CopyToClipboard String
-
+    | ChangeMasterPassword String
