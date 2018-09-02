@@ -11,7 +11,7 @@ import Random
 import RemoteData exposing (RemoteData(..))
 import Route exposing (Route(..), parseLocation, toHash)
 import Time
-import Types exposing (ApiError(..), FormMsg(..), InitState(..), Model, Msg(..))
+import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..))
 
 
 routeChanged : Route -> Model -> Model
@@ -32,10 +32,10 @@ routeChanged route model =
     in
     case route of
         RtNew ->
-            { model | form = PwdRec.empty }
+            { model | form = { rec = PwdRec.empty, pwdVisible = False } }
 
         RtEdit name ->
-            { model | form = findRec name model.passwords }
+            { model | form = { rec = findRec name model.passwords, pwdVisible = False } }
 
         RtPasswordChangeForm ->
             { model | formPassword = "" }
@@ -44,23 +44,33 @@ routeChanged route model =
             model
 
 
-updateForm : FormMsg -> PwdRec -> PwdRec
-updateForm msg rec =
+updateForm : FormMsg -> EditForm -> EditForm
+updateForm msg frm =
+    let
+        rec =
+            frm.rec
+
+        pp r =
+            { frm | rec = r }
+    in
     case msg of
         FmName s ->
-            { rec | name = s }
+            pp { rec | name = s }
 
         FmUrl s ->
-            { rec | url = s }
+            pp { rec | url = s }
 
         FmPassword s ->
-            { rec | password = s }
+            pp { rec | password = s }
 
         FmGroup s ->
-            { rec | grp = s }
+            pp { rec | grp = s }
 
         FmComment s ->
-            { rec | comment = s }
+            pp { rec | comment = s }
+
+        FmFlipPwdVisible ->
+            { frm | pwdVisible = not frm.pwdVisible }
 
 
 decrypt : String -> String -> Result String (List PwdRec)
@@ -132,13 +142,13 @@ update msg model =
                 newPasswords =
                     case model.route of
                         RtNew ->
-                            model.form :: model.passwords
+                            model.form.rec :: model.passwords
 
                         RtEdit name ->
                             List.map
                                 (\itm ->
                                     if itm.name == name then
-                                        model.form
+                                        model.form.rec
 
                                     else
                                         itm

@@ -1,4 +1,13 @@
-module Types exposing (ApiError(..), FormMsg(..), InitState(..), Model, Msg(..), emptyModel, errToString)
+module Types exposing
+    ( ApiError(..)
+    , EditForm
+    , FormMsg(..)
+    , InitState(..)
+    , Model
+    , Msg(..)
+    , emptyModel
+    , errToString
+    )
 
 import Navigation exposing (Location)
 import PwdRec exposing (PwdRec)
@@ -30,11 +39,15 @@ type InitState
     | Ready
 
 
+type alias EditForm =
+    { rec : PwdRec, pwdVisible : Bool }
+
+
 type alias Model =
     { passwords : List PwdRec
     , masterPassword : String
     , route : Route
-    , form : PwdRec
+    , form : EditForm
     , initState : InitState
     , formPassword : String
     , selectedItem : Maybe String
@@ -47,7 +60,7 @@ emptyModel =
     { passwords = []
     , masterPassword = ""
     , route = RtList
-    , form = PwdRec.empty
+    , form = { rec = PwdRec.empty, pwdVisible = False }
     , initState = Loading
     , formPassword = ""
     , selectedItem = Nothing
@@ -61,6 +74,7 @@ type FormMsg
     | FmPassword String
     | FmGroup String
     | FmComment String
+    | FmFlipPwdVisible
 
 
 type

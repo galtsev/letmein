@@ -6,7 +6,7 @@ import Html.Events exposing (onClick, onInput)
 import Http exposing (Error(..))
 import PwdRec exposing (PwdRec)
 import Route exposing (Route(..))
-import Types exposing (ApiError(..), FormMsg(..), InitState(..), Model, Msg(..))
+import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..))
 
 
 link : String -> Route -> Html Msg
@@ -67,17 +67,37 @@ formRow label fld =
         ]
 
 
-viewForm : PwdRec -> Html Msg
-viewForm rec =
+viewForm : EditForm -> Html Msg
+viewForm { rec, pwdVisible } =
     let
         inp val msg =
             input [ value val, onInput (MsgForm << msg) ] []
+
+        addType attrs =
+            if pwdVisible then
+                attrs
+
+            else
+                type_ "password" :: attrs
+
+        pwdAttrs =
+            addType [ value rec.password, onInput (MsgForm << FmPassword) ]
+
+        switch =
+            action
+                (if pwdVisible then
+                    "Hide"
+
+                 else
+                    "Show"
+                )
+                (MsgForm FmFlipPwdVisible)
 
         tbl =
             Html.table []
                 [ formRow "name" <| inp rec.name FmName
                 , formRow "url" <| inp rec.url FmUrl
-                , formRow "password" <| inp rec.password FmPassword
+                , formRow "password" <| Html.span [] [ input pwdAttrs [], switch ]
                 , formRow "group" <| inp rec.grp FmGroup
                 , formRow "comment" <| Html.textarea [ value rec.comment, onInput (MsgForm << FmComment) ] []
                 ]
