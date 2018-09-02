@@ -1,7 +1,7 @@
 module View exposing (view)
 
 import Html exposing (Html, button, div, input, text)
-import Html.Attributes exposing (class, href, type_, value)
+import Html.Attributes as Attr exposing (class, href, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Http exposing (Error(..))
 import PwdRec exposing (PwdRec)
@@ -135,6 +135,16 @@ viewChangeMasterPassword model =
         ]
 
 
+viewDownload : { url : String, label : String } -> Html Msg
+viewDownload { url, label } =
+    div []
+        [ backToList
+        , div [ class "rec" ]
+            [ Html.a [ href url, Attr.downloadAs "passwords.json" ] [ text label ]
+            ]
+        ]
+
+
 viewMenu : Html Msg
 viewMenu =
     let
@@ -149,6 +159,7 @@ viewMenu =
     div []
         [ backToList
         , menuLink "Change master password" <| RtPasswordChangeForm
+        , menuItem "Download unencrypted passwords" <| PrepareDownload
         ]
 
 
@@ -172,6 +183,9 @@ viewReady model =
 
         RtPasswordChangeForm ->
             viewChangeMasterPassword model
+
+        RtDownload ->
+            viewDownload model.download
 
 
 view : Model -> Html Msg

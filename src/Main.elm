@@ -1,11 +1,11 @@
 module Main exposing (main)
 
+import Init exposing (init)
 import Navigation
-import Types exposing (Msg(RouteTo), Model)
+import Subscriptions exposing (subscriptions)
+import Types exposing (Model, Msg(RouteTo))
 import Update exposing (update)
 import View exposing (view)
-import Init exposing (init)
-import Subscriptions exposing (gotPasswords)
 
 
 main : Program Never Model Msg
@@ -14,5 +14,5 @@ main =
         { init = init
         , update = update
         , view = view
-        , subscriptions = \_ -> gotPasswords
+        , subscriptions = \_ -> subscriptions
         }

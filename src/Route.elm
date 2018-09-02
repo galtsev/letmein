@@ -11,6 +11,7 @@ type Route
     | RtNotFound String
     | RtMenu
     | RtPasswordChangeForm
+    | RtDownload
 
 
 toHash : Route -> String
@@ -34,6 +35,9 @@ toHash route =
         RtPasswordChangeForm ->
             "#change_pwd"
 
+        RtDownload ->
+            "#download"
+
 
 locationParser : Parser (Route -> a) a
 locationParser =
@@ -41,6 +45,7 @@ locationParser =
         [ U.map RtList top
         , U.map RtNew (s "new")
         , U.map RtMenu (s "menu")
+        , U.map RtDownload (s "download")
         , U.map RtPasswordChangeForm (s "change_pwd")
         , U.map RtEdit (s "item" </> U.string </> s "edit")
         ]

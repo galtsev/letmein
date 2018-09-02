@@ -20,6 +20,12 @@
                 console.log(err)
             })
         })
+        app.ports.makeDownloadUrl.subscribe(function(data){
+            console.log("got data", data)
+            var url = URL.createObjectURL(new Blob([data]))
+            app.ports.gotDownloadUrl.send(url)
+            console.log("sent back", url)
+        })
     </script>
 </body>
 </html>

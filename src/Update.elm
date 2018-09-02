@@ -199,3 +199,22 @@ update msg model =
                     Api.update { model | masterPassword = newPwd }
             in
             newModel ! [ cmd, newUrl (toHash RtList) ]
+
+        PrepareDownload ->
+            let
+                jsonPwds =
+                    model.passwords
+                        |> List.map PwdRec.encode
+                        |> E.list
+                        |> E.encode 2
+            in
+            model ! [ Ports.makeDownloadUrl jsonPwds ]
+
+        DownloadUrlCreated url ->
+            let
+                download =
+                    { url = url
+                    , label = "Click here to start download"
+                    }
+            in
+            { model | download = download } ! [ newUrl (toHash RtDownload) ]

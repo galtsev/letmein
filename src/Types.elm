@@ -52,6 +52,7 @@ type alias Model =
     , formPassword : String
     , selectedItem : Maybe String
     , seed : Random.Seed
+    , download : { url : String, label : String }
     }
 
 
@@ -65,6 +66,7 @@ emptyModel =
     , formPassword = ""
     , selectedItem = Nothing
     , seed = Random.initialSeed 0
+    , download = { url = "", label = "" }
     }
 
 
@@ -97,3 +99,5 @@ type
     | Debug String
     | CopyToClipboard String
     | ChangeMasterPassword String
+    | PrepareDownload
+    | DownloadUrlCreated String
