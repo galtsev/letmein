@@ -37,6 +37,7 @@ type InitState
     | LoadingFailed String
     | Sealed Bool String -- Sealed <decryption failed> <encrypted data>
     | Ready
+    | LoggedOut
 
 
 type alias EditForm =
@@ -53,6 +54,7 @@ type alias Model =
     , selectedItem : Maybe String
     , seed : Random.Seed
     , download : { url : String, label : String }
+    , ticks : Int
     }
 
 
@@ -67,6 +69,7 @@ emptyModel =
     , selectedItem = Nothing
     , seed = Random.initialSeed 0
     , download = { url = "", label = "" }
+    , ticks = 0
     }
 
 
@@ -101,3 +104,4 @@ type
     | ChangeMasterPassword String
     | PrepareDownload
     | DownloadUrlCreated String
+    | Tick Time.Time

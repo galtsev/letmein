@@ -188,6 +188,11 @@ viewReady model =
             viewDownload model.download
 
 
+viewLoggedOut : Html Msg
+viewLoggedOut =
+    div [] [ text "logged out" ]
+
+
 view : Model -> Html Msg
 view model =
     let
@@ -215,5 +220,8 @@ view model =
 
                 Ready ->
                     viewReady model
+
+                LoggedOut ->
+                    viewLoggedOut
     in
     div [ class "content" ] [ content ]

@@ -11,7 +11,7 @@ import Random
 import RemoteData exposing (RemoteData(..))
 import Route exposing (Route(..), parseLocation, toHash)
 import Time
-import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..))
+import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..), emptyModel)
 
 
 routeChanged : Route -> Model -> Model
@@ -81,7 +81,16 @@ decrypt pwd data =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update msg model_ =
+    let
+        model =
+            case msg of
+                Tick _ ->
+                    model_
+
+                _ ->
+                    { model_ | ticks = 0 }
+    in
     case msg of
         PasswordsResponse d ->
             let
@@ -218,3 +227,17 @@ update msg model =
                     }
             in
             { model | download = download } ! [ newUrl (toHash RtDownload) ]
+
+        Tick _ ->
+            let
+                newTicks =
+                    model.ticks + 1
+
+                newModel =
+                    if newTicks < 30 then
+                        { model | ticks = newTicks }
+
+                    else
+                        { emptyModel | initState = LoggedOut }
+            in
+            ( newModel, Cmd.none )
