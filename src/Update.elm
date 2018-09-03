@@ -7,12 +7,13 @@ import Json.Encode as E
 import Navigation exposing (newUrl)
 import Platform.Cmd exposing (batch)
 import Ports
+import PwdForm
 import PwdRec exposing (PwdRec)
 import Random
 import RemoteData exposing (RemoteData(..))
 import Route exposing (Route(..), parseLocation, toHash)
 import Time
-import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..), emptyModel)
+import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..), emptyForm, emptyModel)
 
 
 navigateTo : Route -> Cmd Msg
@@ -38,45 +39,16 @@ routeChanged route model =
     in
     case route of
         RtNew ->
-            { model | form = { rec = PwdRec.empty, pwdVisible = False } }
+            { model | form = emptyForm }
 
         RtEdit name ->
-            { model | form = { rec = findRec name model.passwords, pwdVisible = False } }
+            { model | form = { emptyForm | rec = findRec name model.passwords } }
 
         RtPasswordChangeForm ->
             { model | formPassword = "" }
 
         _ ->
             model
-
-
-updateForm : FormMsg -> EditForm -> EditForm
-updateForm msg frm =
-    let
-        rec =
-            frm.rec
-
-        pp r =
-            { frm | rec = r }
-    in
-    case msg of
-        FmName s ->
-            pp { rec | name = s }
-
-        FmUrl s ->
-            pp { rec | url = s }
-
-        FmPassword s ->
-            pp { rec | password = s }
-
-        FmGroup s ->
-            pp { rec | grp = s }
-
-        FmComment s ->
-            pp { rec | comment = s }
-
-        FmFlipPwdVisible ->
-            { frm | pwdVisible = not frm.pwdVisible }
 
 
 decrypt : String -> String -> Result String (List PwdRec)
@@ -150,33 +122,10 @@ update msg model_ =
             ( model, newUrl (toHash route) )
 
         MsgForm fmsg ->
-            ( { model | form = updateForm fmsg model.form }, Cmd.none )
+            ( { model | form = PwdForm.updateForm fmsg model.form }, Cmd.none )
 
         SaveForm ->
-            let
-                newPasswords =
-                    case model.route of
-                        RtNew ->
-                            model.form.rec :: model.passwords
-
-                        RtEdit name ->
-                            List.map
-                                (\itm ->
-                                    if itm.name == name then
-                                        model.form.rec
-
-                                    else
-                                        itm
-                                )
-                                model.passwords
-
-                        _ ->
-                            model.passwords
-
-                ( newModel, cmd ) =
-                    Api.update { model | passwords = newPasswords }
-            in
-            newModel ! [ cmd, navigateTo RtList ]
+            PwdForm.saveForm model
 
         Debug str ->
             Debug.log str ( model, Cmd.none )

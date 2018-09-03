@@ -32,6 +32,11 @@ row content =
     div [ class "rec" ] content
 
 
+errMsg : String -> Html Msg
+errMsg s =
+    div [ class "rec err" ] [ text s ]
+
+
 menuItem : String -> Msg -> Html Msg
 menuItem label msg =
     row [ action label msg ]
@@ -60,7 +65,7 @@ viewList pwds =
 
 
 viewForm : EditForm -> Html Msg
-viewForm { rec, pwdVisible } =
+viewForm { rec, pwdVisible, err } =
     let
         inp val msg =
             input [ value val, onInput (MsgForm << msg) ] []
@@ -93,9 +98,18 @@ viewForm { rec, pwdVisible } =
                 , formRow "group" <| inp rec.grp FmGroup
                 , formRow "comment" <| Html.textarea [ value rec.comment, onInput (MsgForm << FmComment) ] []
                 ]
+
+        errBar =
+            case err of
+                Nothing ->
+                    text ""
+
+                Just s ->
+                    errMsg s
     in
     div []
         [ backToList
+        , errBar
         , tbl
         , div [] [ button [ onClick SaveForm ] [ text "save" ] ]
         ]

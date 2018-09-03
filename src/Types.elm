@@ -5,6 +5,7 @@ module Types exposing
     , InitState(..)
     , Model
     , Msg(..)
+    , emptyForm
     , emptyModel
     , errToString
     )
@@ -41,7 +42,18 @@ type InitState
 
 
 type alias EditForm =
-    { rec : PwdRec, pwdVisible : Bool }
+    { rec : PwdRec
+    , pwdVisible : Bool
+    , err : Maybe String
+    }
+
+
+emptyForm : EditForm
+emptyForm =
+    { rec = PwdRec.empty
+    , pwdVisible = False
+    , err = Nothing
+    }
 
 
 type alias Model =
@@ -62,7 +74,7 @@ emptyModel =
     { passwords = []
     , masterPassword = ""
     , route = RtList
-    , form = { rec = PwdRec.empty, pwdVisible = False }
+    , form = emptyForm
     , initState = Loading
     , formPassword = ""
     , seed = Random.initialSeed 0
