@@ -201,6 +201,6 @@ update msg model_ =
                             model.passwords
 
                 ( newModel, cmd ) =
-                    Api.update { model | passwords = newPasswords }
+                    Api.update { model | passwords = List.sortBy .name newPasswords }
             in
             newModel ! [ cmd, navigateTo RtList ]
