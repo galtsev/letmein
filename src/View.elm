@@ -27,36 +27,19 @@ backToList =
         ]
 
 
-viewList : List PwdRec -> Maybe String -> Html Msg
-viewList pwds selected =
-    let
-        actions r =
-            div [ class "rec-actions" ] <|
-                List.intersperse (text " | ")
-                    [ action "copy password" <| CopyToClipboard r.password
-                    , action "delete" <| DeleteItem r.name
-                    ]
+row : List (Html Msg) -> Html Msg
+row content =
+    div [ class "rec" ] content
 
-        viewRec r =
-            div [ class "rec" ]
-                [ link r.name <| RtEdit r.name
-                , text " | "
-                , action "actions" <| SelectItem r.name
-                , if selected == Just r.name then
-                    actions r
 
-                  else
-                    text ""
-                ]
+menuItem : String -> Msg -> Html Msg
+menuItem label msg =
+    row [ action label msg ]
 
-        lst =
-            div [] <| List.map viewRec pwds
-    in
-    div []
-        [ div [ class "header" ] [ link "Menu" RtMenu ]
-        , div [ class "rec" ] [ Html.i [ class "fa fa-plus action" ] [], action " New" <| NavigateTo RtNew ]
-        , lst
-        ]
+
+menuLink : String -> Route -> Html Msg
+menuLink label route =
+    menuItem label <| NavigateTo route
 
 
 formRow : String -> Html Msg -> Html Msg
@@ -64,6 +47,15 @@ formRow label fld =
     Html.tr [ class "form-row" ]
         [ Html.td [] [ text label ]
         , Html.td [] [ fld ]
+        ]
+
+
+viewList : List PwdRec -> Html Msg
+viewList pwds =
+    div []
+        [ div [ class "header" ] [ link "Menu" RtMenu ]
+        , row [ Html.i [ class "fa fa-plus action" ] [], action " New" <| NavigateTo RtNew ]
+        , div [] <| List.map (\r -> row [ link r.name (RtItemMenu r.name) ]) pwds
         ]
 
 
@@ -139,7 +131,7 @@ viewDownload : { url : String, label : String } -> Html Msg
 viewDownload { url, label } =
     div []
         [ backToList
-        , div [ class "rec" ]
+        , row
             [ Html.a [ href url, Attr.downloadAs "passwords.json" ] [ text label ]
             ]
         ]
@@ -147,15 +139,6 @@ viewDownload { url, label } =
 
 viewMenu : Html Msg
 viewMenu =
-    let
-        menuItem : String -> Msg -> Html Msg
-        menuItem label msg =
-            div [ class "rec" ] [ action label msg ]
-
-        menuLink : String -> Route -> Html Msg
-        menuLink label route =
-            menuItem label <| NavigateTo route
-    in
     div []
         [ backToList
         , menuLink "Change master password" <| RtPasswordChangeForm
@@ -163,17 +146,45 @@ viewMenu =
         ]
 
 
+viewItemMenu : PwdRec -> Html Msg
+viewItemMenu rec =
+    div []
+        [ backToList
+        , row [ Html.h3 [] [ text rec.name ] ]
+        , menuLink "Edit" <| RtEdit rec.name
+        , menuItem "Copy password" <| CopyToClipboard rec.password
+        , menuItem "Delete" <| DeleteItem rec.name
+        ]
+
+
 viewReady : Model -> Html Msg
 viewReady model =
+    let
+        findItem : String -> List PwdRec -> PwdRec
+        findItem name lst =
+            case lst of
+                [] ->
+                    PwdRec.empty
+
+                x :: xs ->
+                    if x.name == name then
+                        x
+
+                    else
+                        findItem name xs
+    in
     case model.route of
         RtList ->
-            viewList model.passwords model.selectedItem
+            viewList model.passwords
 
         RtNew ->
             viewForm model.form
 
         RtEdit name ->
             viewForm model.form
+
+        RtItemMenu name ->
+            viewItemMenu (findItem name model.passwords)
 
         RtNotFound path ->
             div [] [ text ("Not found:" ++ path) ]

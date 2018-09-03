@@ -31,5 +31,6 @@ subscriptions =
     batch
         [ gotPasswords
         , gotDownloadUrl
-        , Time.every (Time.second * 10) Tick
+
+        -- , Time.every (Time.second * 10) Tick
         ]

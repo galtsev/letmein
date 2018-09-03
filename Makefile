@@ -1,3 +1,3 @@
 
 build :
-	elm make --output static/main.js src/Main.elm
+	elm make --output static/main.js --debug src/Main.elm

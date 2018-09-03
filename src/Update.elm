@@ -178,26 +178,15 @@ update msg model_ =
         CopyToClipboard s ->
             ( model, Ports.writeClipboard s )
 
-        SelectItem name ->
-            let
-                selected =
-                    if model.selectedItem == Just name then
-                        Nothing
-
-                    else
-                        Just name
-            in
-            ( { model | selectedItem = selected }, Cmd.none )
-
         DeleteItem name ->
             let
                 newPasswords =
                     List.filter (\r -> r.name /= name) model.passwords
 
-                newModel =
-                    { model | passwords = newPasswords, selectedItem = Nothing }
+                ( newModel, cmd ) =
+                    Api.update { model | passwords = newPasswords }
             in
-            Api.update newModel
+            newModel ! [ cmd, newUrl (toHash RtList) ]
 
         GotSeed tm ->
             { model | seed = Random.initialSeed (truncate (Time.inMilliseconds tm)) } ! [ Cmd.none ]

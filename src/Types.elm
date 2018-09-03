@@ -51,7 +51,6 @@ type alias Model =
     , form : EditForm
     , initState : InitState
     , formPassword : String
-    , selectedItem : Maybe String
     , seed : Random.Seed
     , download : { url : String, label : String }
     , ticks : Int
@@ -66,7 +65,6 @@ emptyModel =
     , form = { rec = PwdRec.empty, pwdVisible = False }
     , initState = Loading
     , formPassword = ""
-    , selectedItem = Nothing
     , seed = Random.initialSeed 0
     , download = { url = "", label = "" }
     , ticks = 0
@@ -95,13 +93,13 @@ type
       -- password add/edit form
     | MsgForm FormMsg
     | SaveForm
-      -- password list
-    | SelectItem String
-    | DeleteItem String
-      -- misc
-    | Debug String
+      -- item menu
     | CopyToClipboard String
+    | DeleteItem String
+      -- menu
     | ChangeMasterPassword String
     | PrepareDownload
     | DownloadUrlCreated String
+      -- misc
+    | Debug String
     | Tick Time.Time

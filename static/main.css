@@ -53,3 +53,7 @@ button {
     border: solid 1px black;
     background-color: #f9e2ff;
 }
+
+h3 {
+    margin: 8px;
+}
