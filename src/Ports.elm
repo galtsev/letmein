@@ -1,4 +1,4 @@
-port module Ports exposing (get, getSub, gotDownloadUrl, makeDownloadUrl, put, writeClipboard)
+port module Ports exposing (fileData, get, getSub, gotDownloadUrl, makeDownloadUrl, put, readFile, writeClipboard)
 
 
 port put : ( String, String ) -> Cmd msg
@@ -17,3 +17,9 @@ port makeDownloadUrl : String -> Cmd msg
 
 
 port gotDownloadUrl : (String -> msg) -> Sub msg
+
+
+port readFile : String -> Cmd msg
+
+
+port fileData : (String -> msg) -> Sub msg

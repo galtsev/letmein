@@ -1,9 +1,9 @@
 module Subscriptions exposing (subscriptions)
 
 import Platform.Sub exposing (batch)
-import Ports exposing (getSub)
+import Ports
 import Time
-import Types exposing (ApiError(NotFound), Msg(DownloadUrlCreated, PasswordsResponse, Tick))
+import Types exposing (ApiError(NotFound), Msg(DownloadUrlCreated, FileData, PasswordsResponse, Tick))
 
 
 gotPasswords : Sub Msg
@@ -18,7 +18,7 @@ gotPasswords =
                 Just s ->
                     Ok s
     in
-    getSub (PasswordsResponse << toMsg)
+    Ports.getSub (PasswordsResponse << toMsg)
 
 
 gotDownloadUrl : Sub Msg
@@ -31,6 +31,7 @@ subscriptions =
     batch
         [ gotPasswords
         , gotDownloadUrl
+        , Ports.fileData FileData
 
         -- , Time.every (Time.second * 10) Tick
         ]

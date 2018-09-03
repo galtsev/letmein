@@ -5,6 +5,7 @@ import Crypto.Strings as Cr
 import Json.Decode as D
 import Json.Encode as E
 import Navigation exposing (newUrl)
+import Platform.Cmd exposing (batch)
 import Ports
 import PwdRec exposing (PwdRec)
 import Random
@@ -12,6 +13,11 @@ import RemoteData exposing (RemoteData(..))
 import Route exposing (Route(..), parseLocation, toHash)
 import Time
 import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..), emptyModel)
+
+
+navigateTo : Route -> Cmd Msg
+navigateTo r =
+    newUrl (toHash r)
 
 
 routeChanged : Route -> Model -> Model
@@ -119,7 +125,7 @@ update msg model_ =
                 Sealed _ data ->
                     case decrypt pwd data of
                         Ok pwds ->
-                            ( { model | passwords = pwds, initState = Ready, masterPassword = pwd }, Cmd.none )
+                            ( { model | passwords = List.sortBy .name pwds, initState = Ready, masterPassword = pwd }, Cmd.none )
 
                         Err str ->
                             ( { model | initState = Sealed True data, formPassword = "" }, Cmd.none )
@@ -167,10 +173,10 @@ update msg model_ =
                         _ ->
                             model.passwords
 
-                ( newModel, updateCmd ) =
+                ( newModel, cmd ) =
                     Api.update { model | passwords = newPasswords }
             in
-            newModel ! [ updateCmd, newUrl (toHash RtList) ]
+            newModel ! [ cmd, navigateTo RtList ]
 
         Debug str ->
             Debug.log str ( model, Cmd.none )
@@ -186,7 +192,7 @@ update msg model_ =
                 ( newModel, cmd ) =
                     Api.update { model | passwords = newPasswords }
             in
-            newModel ! [ cmd, newUrl (toHash RtList) ]
+            newModel ! [ cmd, navigateTo RtList ]
 
         GotSeed tm ->
             { model | seed = Random.initialSeed (truncate (Time.inMilliseconds tm)) } ! [ Cmd.none ]
@@ -196,7 +202,7 @@ update msg model_ =
                 ( newModel, cmd ) =
                     Api.update { model | masterPassword = newPwd }
             in
-            newModel ! [ cmd, newUrl (toHash RtList) ]
+            newModel ! [ cmd, navigateTo RtList ]
 
         PrepareDownload ->
             let
@@ -215,7 +221,7 @@ update msg model_ =
                     , label = "Click here to start download"
                     }
             in
-            { model | download = download } ! [ newUrl (toHash RtDownload) ]
+            { model | download = download } ! [ navigateTo RtDownload ]
 
         Tick _ ->
             let
@@ -230,3 +236,22 @@ update msg model_ =
                         { emptyModel | initState = LoggedOut }
             in
             ( newModel, Cmd.none )
+
+        UploadPasswords ->
+            model ! [ Ports.readFile "passwords-file" ]
+
+        FileData data ->
+            let
+                newPasswords =
+                    case D.decodeString (D.list PwdRec.decoder) data of
+                        Ok pwds ->
+                            pwds
+
+                        -- TODO: show error
+                        Err _ ->
+                            model.passwords
+
+                ( newModel, cmd ) =
+                    Api.update { model | passwords = newPasswords }
+            in
+            newModel ! [ cmd, navigateTo RtList ]

@@ -14,6 +14,7 @@ type Route
     | RtMenu
     | RtPasswordChangeForm
     | RtDownload
+    | RtUpload
 
 
 toHash : Route -> String
@@ -43,6 +44,9 @@ toHash route =
         RtDownload ->
             "#download"
 
+        RtUpload ->
+            "#upload"
+
 
 locationParser : Parser (Route -> a) a
 locationParser =
@@ -51,6 +55,7 @@ locationParser =
         , U.map RtNew (s "new")
         , U.map RtMenu (s "menu")
         , U.map RtDownload (s "download")
+        , U.map RtUpload (s "upload")
         , U.map RtPasswordChangeForm (s "change_pwd")
         , U.map RtEdit (s "item" </> U.map (Maybe.withDefault "" << Http.decodeUri) U.string </> s "edit")
         , U.map RtItemMenu (s "item" </> U.map (Maybe.withDefault "" << Http.decodeUri) U.string </> s "actions")

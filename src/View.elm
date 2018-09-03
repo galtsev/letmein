@@ -137,12 +137,24 @@ viewDownload { url, label } =
         ]
 
 
+viewUpload : Html Msg
+viewUpload =
+    div []
+        [ backToList
+        , Html.table []
+            [ formRow "Select file" <| input [ type_ "file", Attr.id "passwords-file" ] []
+            , formRow "" <| button [ onClick UploadPasswords ] [ text "Upload" ]
+            ]
+        ]
+
+
 viewMenu : Html Msg
 viewMenu =
     div []
         [ backToList
-        , menuLink "Change master password" <| RtPasswordChangeForm
-        , menuItem "Download unencrypted passwords" <| PrepareDownload
+        , menuLink "Change master password" RtPasswordChangeForm
+        , menuItem "Download unencrypted passwords" PrepareDownload
+        , menuLink "Upload unencrypted passwords" RtUpload
         ]
 
 
@@ -197,6 +209,9 @@ viewReady model =
 
         RtDownload ->
             viewDownload model.download
+
+        RtUpload ->
+            viewUpload
 
 
 viewLoggedOut : Html Msg

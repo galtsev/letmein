@@ -100,6 +100,8 @@ type
     | ChangeMasterPassword String
     | PrepareDownload
     | DownloadUrlCreated String
+    | UploadPasswords
+    | FileData String
       -- misc
     | Debug String
     | Tick Time.Time
