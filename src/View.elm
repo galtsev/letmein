@@ -55,6 +55,11 @@ formRow label fld =
         ]
 
 
+btn : String -> Msg -> Html Msg
+btn label msg =
+    button [ class "btn", onClick msg ] [ text label ]
+
+
 viewList : List PwdRec -> Html Msg
 viewList pwds =
     div []
@@ -97,6 +102,7 @@ viewForm { rec, pwdVisible, err } =
                 , formRow "password" <| Html.span [] [ input pwdAttrs [], switch ]
                 , formRow "group" <| inp rec.grp FmGroup
                 , formRow "comment" <| Html.textarea [ value rec.comment, onInput (MsgForm << FmComment) ] []
+                , formRow "" <| btn "save" SaveForm
                 ]
 
         errBar =
@@ -111,18 +117,17 @@ viewForm { rec, pwdVisible, err } =
         [ backToList
         , errBar
         , tbl
-        , div [] [ button [ onClick SaveForm ] [ text "save" ] ]
         ]
 
 
 viewLogin : String -> String -> Html Msg
 viewLogin pwd label =
     div []
-        [ div [] [ text label ]
-        , div []
-            [ text "Password:"
-            , input [ value pwd, type_ "password", onInput FmLogin ] []
-            , button [ onClick TryPassword ] [ text "login" ]
+        [ div [ class "header" ] [ text "login" ]
+        , row <| [ text label ]
+        , Html.table []
+            [ formRow "password" <| input [ value pwd, type_ "password", onInput FmLogin ] []
+            , formRow "" <| btn "login" TryPassword
             ]
         ]
 
@@ -133,10 +138,7 @@ viewChangeMasterPassword model =
         [ backToList
         , Html.table []
             [ formRow "new password" <| input [ value model.formPassword, onInput FmLogin ] []
-            , Html.tr []
-                [ Html.td [] []
-                , Html.td [] [ button [ onClick (ChangeMasterPassword model.formPassword) ] [ text "Update" ] ]
-                ]
+            , formRow "" <| btn "update" (ChangeMasterPassword model.formPassword)
             ]
         ]
 
@@ -157,7 +159,7 @@ viewUpload =
         [ backToList
         , Html.table []
             [ formRow "Select file" <| input [ type_ "file", Attr.id "passwords-file" ] []
-            , formRow "" <| button [ onClick UploadPasswords ] [ text "Upload" ]
+            , formRow "" <| btn "upload" UploadPasswords
             ]
         ]
 
