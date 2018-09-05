@@ -137,7 +137,7 @@ viewChangeMasterPassword model =
     div []
         [ backToList
         , Html.table []
-            [ formRow "new password" <| input [ value model.formPassword, onInput FmLogin ] []
+            [ formRow "new password" <| input [ value model.formPassword, type_ "password", onInput FmLogin ] []
             , formRow "" <| btn "update" (ChangeMasterPassword model.formPassword)
             ]
         ]
