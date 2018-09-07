@@ -60,26 +60,6 @@ saveForm model =
                 _ ->
                     False
 
-        updatePasswords () =
-            List.sortBy .name <|
-                case model.route of
-                    RtNew ->
-                        model.form.rec :: model.passwords
-
-                    RtEdit name ->
-                        List.map
-                            (\itm ->
-                                if itm.name == name then
-                                    model.form.rec
-
-                                else
-                                    itm
-                            )
-                            model.passwords
-
-                    _ ->
-                        model.passwords
-
         updateForm fm err =
             if isErr then
                 { fm | err = err }
@@ -92,7 +72,29 @@ saveForm model =
 
     else
         let
-            ( md, cm ) =
-                Api.update { model | passwords = updatePasswords () }
+            newPasswords =
+                List.sortBy .name <|
+                    case model.route of
+                        RtNew ->
+                            model.form.rec :: model.passwords
+
+                        RtEdit name ->
+                            List.map
+                                (\itm ->
+                                    if itm.name == name then
+                                        model.form.rec
+
+                                    else
+                                        itm
+                                )
+                                model.passwords
+
+                        _ ->
+                            model.passwords
         in
-        md ! [ cm, newUrl (toHash RtList) ]
+        case Api.encrypt model.seed model.masterPassword newPasswords of
+            Ok ( chiper, newSeed ) ->
+                { model | passwords = newPasswords, seed = newSeed } ! [ Api.savePasswords chiper, newUrl (toHash RtList) ]
+
+            Err err ->
+                Debug.log err ( model, Cmd.none )

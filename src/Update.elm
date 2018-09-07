@@ -137,21 +137,24 @@ update msg model_ =
             let
                 newPasswords =
                     List.filter (\r -> r.name /= name) model.passwords
-
-                ( newModel, cmd ) =
-                    Api.update { model | passwords = newPasswords }
             in
-            newModel ! [ cmd, navigateTo RtList ]
+            case Api.encrypt model.seed model.masterPassword newPasswords of
+                Ok ( chiper, newSeed ) ->
+                    { model | passwords = newPasswords, seed = newSeed } ! [ Api.savePasswords chiper, navigateTo RtList ]
+
+                Err err ->
+                    Debug.log err ( model, Cmd.none )
 
         GotSeed tm ->
             { model | seed = Random.initialSeed (truncate (Time.inMilliseconds tm)) } ! [ Cmd.none ]
 
         ChangeMasterPassword newPwd ->
-            let
-                ( newModel, cmd ) =
-                    Api.update { model | masterPassword = newPwd }
-            in
-            newModel ! [ cmd, navigateTo RtList ]
+            case Api.encrypt model.seed model.masterPassword model.passwords of
+                Ok ( chiper, newSeed ) ->
+                    { model | masterPassword = newPwd, seed = newSeed } ! [ Api.savePasswords chiper, navigateTo RtList ]
+
+                Err err ->
+                    Debug.log err ( model, Cmd.none )
 
         PrepareDownload ->
             let
@@ -199,11 +202,13 @@ update msg model_ =
                         -- TODO: show error
                         Err _ ->
                             model.passwords
-
-                ( newModel, cmd ) =
-                    Api.update { model | passwords = List.sortBy .name newPasswords }
             in
-            newModel ! [ cmd, navigateTo RtList ]
+            case Api.encrypt model.seed model.masterPassword newPasswords of
+                Ok ( chiper, newSeed ) ->
+                    { model | passwords = newPasswords, seed = newSeed } ! [ Api.savePasswords chiper, navigateTo RtList ]
+
+                Err err ->
+                    Debug.log err ( model, Cmd.none )
 
         FmFilter s ->
             { model | passwordsFilter = s } ! [ Cmd.none ]
