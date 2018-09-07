@@ -204,3 +204,6 @@ update msg model_ =
                     Api.update { model | passwords = List.sortBy .name newPasswords }
             in
             newModel ! [ cmd, navigateTo RtList ]
+
+        FmFilter s ->
+            { model | passwordsFilter = s } ! [ Cmd.none ]

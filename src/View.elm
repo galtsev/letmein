@@ -6,6 +6,7 @@ import Html.Events exposing (onClick, onInput)
 import Http exposing (Error(..))
 import PwdRec exposing (PwdRec)
 import Route exposing (Route(..))
+import String
 import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..))
 
 
@@ -60,12 +61,20 @@ btn label msg =
     button [ class "btn", onClick msg ] [ text label ]
 
 
-viewList : List PwdRec -> Html Msg
-viewList pwds =
+viewList : String -> List PwdRec -> Html Msg
+viewList filter pwds =
+    let
+        match r =
+            String.contains filter r.name
+
+        filtered =
+            List.filter match pwds
+    in
     div []
         [ div [ class "header" ] [ link "Menu" RtMenu ]
+        , row [ input [ value filter, onInput FmFilter ] [], Html.i [ class "fa fa-search" ] [] ]
         , row [ Html.i [ class "fa fa-plus action" ] [], action " New" <| NavigateTo RtNew ]
-        , div [] <| List.map (\r -> row [ link r.name (RtItemMenu r.name) ]) pwds
+        , div [] <| List.map (\r -> row [ link r.name (RtItemMenu r.name) ]) filtered
         ]
 
 
@@ -204,7 +213,7 @@ viewReady model =
     in
     case model.route of
         RtList ->
-            viewList model.passwords
+            viewList model.passwordsFilter model.passwords
 
         RtNew ->
             viewForm model.form

@@ -58,6 +58,7 @@ emptyForm =
 
 type alias Model =
     { passwords : List PwdRec
+    , passwordsFilter : String
     , masterPassword : String
     , route : Route
     , form : EditForm
@@ -72,6 +73,7 @@ type alias Model =
 emptyModel : Model
 emptyModel =
     { passwords = []
+    , passwordsFilter = ""
     , masterPassword = ""
     , route = RtList
     , form = emptyForm
@@ -103,6 +105,8 @@ type
       -- Navigation
     | RouteTo Location
     | NavigateTo Route
+      -- password list
+    | FmFilter String
       -- password add/edit form
     | MsgForm FormMsg
     | SaveForm
