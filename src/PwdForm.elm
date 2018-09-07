@@ -23,6 +23,9 @@ updateForm msg frm =
         FmUrl s ->
             pp { rec | url = s }
 
+        FmUser s ->
+            pp { rec | user = s }
+
         FmPassword s ->
             pp { rec | password = s }
 

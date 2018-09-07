@@ -86,6 +86,7 @@ emptyModel =
 type FormMsg
     = FmName String
     | FmUrl String
+    | FmUser String
     | FmPassword String
     | FmGroup String
     | FmComment String

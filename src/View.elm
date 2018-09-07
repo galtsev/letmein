@@ -99,6 +99,7 @@ viewForm { rec, pwdVisible, err } =
             Html.table []
                 [ formRow "name" <| inp rec.name FmName
                 , formRow "url" <| inp rec.url FmUrl
+                , formRow "user" <| inp rec.user FmUser
                 , formRow "password" <| Html.span [] [ input pwdAttrs [], switch ]
                 , formRow "group" <| inp rec.grp FmGroup
                 , formRow "comment" <| Html.textarea [ value rec.comment, onInput (MsgForm << FmComment) ] []
