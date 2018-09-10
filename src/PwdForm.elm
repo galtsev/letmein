@@ -3,7 +3,7 @@ module PwdForm exposing (saveForm, updateForm)
 import Api
 import Navigation exposing (newUrl)
 import PwdRec exposing (PwdRec)
-import Route exposing (Route(RtEdit, RtList, RtNew), toHash)
+import Route exposing (Route(RtEdit, RtList, RtNew), navigateTo)
 import Types exposing (EditForm, FormMsg(..), Model, Msg, ViewState(..))
 
 
@@ -39,62 +39,45 @@ updateForm msg frm =
             { frm | pwdVisible = not frm.pwdVisible }
 
 
-saveForm : Model -> ( Model, Cmd Msg )
-saveForm model =
+saveForm : Maybe String -> PwdRec -> Model -> ( Model, Cmd Msg )
+saveForm oldName rec model =
     let
         invalid name =
             List.any (\r -> r.name == name) model.passwords
 
         isErr =
-            let
-                name =
-                    model.form.rec.name
-            in
-            case model.state of
-                RouteView RtNew ->
-                    invalid name
+            case oldName of
+                Nothing ->
+                    invalid rec.name
 
-                RouteView (RtEdit oldName) ->
-                    name /= oldName && invalid name
-
-                _ ->
-                    False
-
-        updateForm fm err =
-            if isErr then
-                { fm | err = err }
-
-            else
-                fm
+                Just name ->
+                    name /= rec.name && invalid rec.name
     in
     if isErr then
-        { model | form = updateForm model.form (Just "Duplicate name") } ! [ Cmd.none ]
+        { model | err = Just "Duplicate name" } ! [ Cmd.none ]
 
     else
         let
             newPasswords =
                 List.sortBy .name <|
-                    case model.state of
-                        RouteView RtNew ->
-                            model.form.rec :: model.passwords
+                    case oldName of
+                        Nothing ->
+                            rec :: model.passwords
 
-                        RouteView (RtEdit name) ->
+                        Just name ->
                             List.map
                                 (\itm ->
                                     if itm.name == name then
-                                        model.form.rec
+                                        rec
 
                                     else
                                         itm
                                 )
                                 model.passwords
-
-                        _ ->
-                            model.passwords
         in
         case Api.encrypt model.seed model.masterPassword newPasswords of
             Ok ( chiper, newSeed ) ->
-                { model | passwords = newPasswords, seed = newSeed } ! [ Api.savePasswords chiper, newUrl (toHash RtList) ]
+                { model | passwords = newPasswords, seed = newSeed } ! [ Api.savePasswords chiper, navigateTo RtList ]
 
             Err err ->
                 Debug.log err ( model, Cmd.none )

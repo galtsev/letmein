@@ -78,8 +78,8 @@ viewList filter pwds =
         ]
 
 
-viewForm : EditForm -> Html Msg
-viewForm { rec, pwdVisible, err } =
+viewForm : EditForm -> Maybe String -> Html Msg
+viewForm { rec, pwdVisible } err =
     let
         inp val msg =
             input [ value val, onInput (MsgForm << msg) ] []
@@ -220,22 +220,22 @@ viewRoute route model =
     in
     case route of
         RtList ->
-            viewList model.passwordsFilter model.passwords
+            viewErr "Unexpected: route handled in state"
 
         RtNew ->
-            viewForm model.form
+            viewErr "Unexpected: route handled in state"
 
         RtEdit name ->
-            viewForm model.form
+            viewErr "Unexpected: route handled in state"
 
         RtItemMenu name ->
-            viewItemMenu (findItem name model.passwords)
+            viewErr "Unexpected: route handled in state"
 
         RtNotFound path ->
-            div [] [ text ("Not found:" ++ path) ]
+            viewErr "Unexpected: route handled in state"
 
         RtMenu ->
-            viewMenu
+            viewErr "Unexpected: route handled in state"
 
         RtPasswordChangeForm ->
             viewChangeMasterPassword model
@@ -244,7 +244,7 @@ viewRoute route model =
             viewErr "Unexpected: route handled in state"
 
         RtUpload ->
-            viewUpload
+            viewErr "Unexpected: route handled in state"
 
 
 viewErr : String -> Html Msg
@@ -263,8 +263,26 @@ viewReady model =
         DownloadView data ->
             viewDownload data
 
+        UploadView ->
+            viewUpload
+
         RouteView route ->
             viewRoute route model
+
+        EditView _ fm ->
+            viewForm fm model.err
+
+        MenuView ->
+            viewMenu
+
+        ListView ->
+            viewList model.passwordsFilter model.passwords
+
+        ItemMenuView rec ->
+            viewItemMenu rec
+
+        ErrorView label ->
+            viewErr label
 
 
 view : Model -> Html Msg

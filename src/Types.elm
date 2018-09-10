@@ -45,20 +45,24 @@ type InitState
 type alias EditForm =
     { rec : PwdRec
     , pwdVisible : Bool
-    , err : Maybe String
     }
 
 
 type ViewState
     = RouteView Route
     | DownloadView (Maybe { url : String, label : String })
+    | UploadView
+    | EditView (Maybe String) EditForm
+    | MenuView
+    | ItemMenuView PwdRec
+    | ListView
+    | ErrorView String
 
 
 emptyForm : EditForm
 emptyForm =
     { rec = PwdRec.empty
     , pwdVisible = False
-    , err = Nothing
     }
 
 
@@ -66,11 +70,11 @@ type alias Model =
     { passwords : List PwdRec
     , passwordsFilter : String
     , masterPassword : String
-    , form : EditForm
     , initState : InitState
     , formPassword : String
     , seed : Random.Seed
     , state : ViewState
+    , err : Maybe String
     , ticks : Int
     }
 
@@ -80,11 +84,11 @@ emptyModel =
     { passwords = []
     , passwordsFilter = ""
     , masterPassword = ""
-    , form = emptyForm
     , initState = Loading
     , formPassword = ""
     , seed = Random.initialSeed 0
     , state = RouteView RtList
+    , err = Nothing
     , ticks = 0
     }
 

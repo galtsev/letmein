@@ -14,6 +14,11 @@ import Time
 import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..), ViewState(..), emptyForm, emptyModel)
 
 
+unexpectedMessage : ViewState -> Msg -> Model -> ( Model, Cmd Msg )
+unexpectedMessage st msg model =
+    Debug.log ("Unexpected message " ++ toString msg ++ " for state " ++ toString st) (model ! [])
+
+
 routeChanged : Location -> Model -> ( Model, Cmd Msg )
 routeChanged loc model =
     let
@@ -35,13 +40,17 @@ routeChanged loc model =
 
         newModel =
             { model | state = RouteView route }
+
+        newState : ViewState -> ( Model, Cmd Msg )
+        newState st =
+            { model | state = st } ! []
     in
     case route of
         RtNew ->
-            { newModel | form = emptyForm } ! []
+            newState <| EditView Nothing emptyForm
 
         RtEdit name ->
-            { newModel | form = { emptyForm | rec = findRec name model.passwords } } ! []
+            newState <| EditView (Just name) { emptyForm | rec = findRec name model.passwords }
 
         RtPasswordChangeForm ->
             { newModel | formPassword = "" } ! []
@@ -56,8 +65,20 @@ routeChanged loc model =
             in
             { model | state = DownloadView Nothing } ! [ Ports.makeDownloadUrl jsonPwds ]
 
-        _ ->
-            newModel ! []
+        RtUpload ->
+            newState UploadView
+
+        RtMenu ->
+            newState MenuView
+
+        RtList ->
+            newState ListView
+
+        RtNotFound path ->
+            newState <| ErrorView <| "Not found: " ++ path
+
+        RtItemMenu name ->
+            newState <| ItemMenuView <| findRec name model.passwords
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -99,7 +120,7 @@ update msg model_ =
                 Sealed _ data ->
                     case Api.decrypt pwd data of
                         Ok pwds ->
-                            ( { model | passwords = List.sortBy .name pwds, initState = Ready, masterPassword = pwd }, Cmd.none )
+                            ( { model | passwords = List.sortBy .name pwds, initState = Ready, masterPassword = pwd }, navigateTo RtList )
 
                         Err str ->
                             ( { model | initState = Sealed True data, formPassword = "" }, Cmd.none )
@@ -117,10 +138,20 @@ update msg model_ =
             model ! [ navigateTo route ]
 
         MsgForm fmsg ->
-            ( { model | form = PwdForm.updateForm fmsg model.form }, Cmd.none )
+            case model.state of
+                EditView key form ->
+                    ( { model | state = EditView key <| PwdForm.updateForm fmsg form }, Cmd.none )
+
+                st ->
+                    unexpectedMessage st msg model
 
         SaveForm ->
-            PwdForm.saveForm model
+            case model.state of
+                EditView key form ->
+                    PwdForm.saveForm key form.rec model
+
+                st ->
+                    unexpectedMessage st msg model
 
         Debug str ->
             Debug.log str ( model, Cmd.none )
