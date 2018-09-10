@@ -58,3 +58,8 @@ h3 {
     padding: 4px;
     font-size: 16px;
 }
+
+span.title {
+    margin-left: 1em;
+    font-weight: bold;
+}

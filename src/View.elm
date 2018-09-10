@@ -20,6 +20,21 @@ action label msg =
     Html.a [ onClick msg, class "action" ] [ text label ]
 
 
+icon : String -> Html Msg
+icon cls =
+    Html.i [ class cls ] []
+
+
+iconBack : Html Msg
+iconBack =
+    icon "fa fa-arrow-left action"
+
+
+iconPlus : Html Msg
+iconPlus =
+    icon "fa fa-plus action"
+
+
 backToList : Html Msg
 backToList =
     div [ class "header" ]
@@ -48,6 +63,11 @@ menuLink label route =
     menuItem label <| NavigateTo route
 
 
+form : List (Html Msg) -> Html Msg
+form content =
+    Html.table [] content
+
+
 formRow : String -> Html Msg -> Html Msg
 formRow label fld =
     Html.tr [ class "form-row" ]
@@ -59,6 +79,23 @@ formRow label fld =
 btn : String -> Msg -> Html Msg
 btn label msg =
     button [ class "btn", onClick msg ] [ text label ]
+
+
+normalView : Maybe String -> String -> List (Html Msg) -> Html Msg
+normalView err label content =
+    let
+        hdr =
+            div [ class "header" ]
+                [ Html.a [ onClick (NavigateTo RtList), class "action" ] [ icon "fa fa-arrow-left action" ]
+                , Html.span [ class "title" ] [ text label ]
+                ]
+    in
+    div [] <|
+        List.concat
+            [ [ hdr ]
+            , List.filterMap identity [ Maybe.map errMsg err ]
+            , content
+            ]
 
 
 viewList : String -> List PwdRec -> Html Msg
@@ -73,13 +110,12 @@ viewList filter pwds =
     div []
         [ div [ class "header" ] [ link "Menu" RtMenu ]
         , row [ input [ value filter, onInput FmFilter ] [], Html.i [ class "fa fa-search" ] [] ]
-        , row [ Html.i [ class "fa fa-plus action" ] [], action " New" <| NavigateTo RtNew ]
         , div [] <| List.map (\r -> row [ link r.name (RtItemMenu r.name) ]) filtered
         ]
 
 
-viewForm : EditForm -> Maybe String -> Html Msg
-viewForm { rec, pwdVisible } err =
+viewForm : EditForm -> Html Msg
+viewForm { rec, pwdVisible } =
     let
         inp val msg =
             input [ value val, onInput (MsgForm << msg) ] []
@@ -103,30 +139,15 @@ viewForm { rec, pwdVisible } err =
                     "Show"
                 )
                 (MsgForm FmFlipPwdVisible)
-
-        tbl =
-            Html.table []
-                [ formRow "name" <| inp rec.name FmName
-                , formRow "url" <| inp rec.url FmUrl
-                , formRow "user" <| inp rec.user FmUser
-                , formRow "password" <| Html.span [] [ input pwdAttrs [], switch ]
-                , formRow "group" <| inp rec.grp FmGroup
-                , formRow "comment" <| Html.textarea [ value rec.comment, onInput (MsgForm << FmComment) ] []
-                , formRow "" <| btn "save" SaveForm
-                ]
-
-        errBar =
-            case err of
-                Nothing ->
-                    text ""
-
-                Just s ->
-                    errMsg s
     in
-    div []
-        [ backToList
-        , errBar
-        , tbl
+    form
+        [ formRow "name" <| inp rec.name FmName
+        , formRow "url" <| inp rec.url FmUrl
+        , formRow "user" <| inp rec.user FmUser
+        , formRow "password" <| Html.span [] [ input pwdAttrs [], switch ]
+        , formRow "group" <| inp rec.grp FmGroup
+        , formRow "comment" <| Html.textarea [ value rec.comment, onInput (MsgForm << FmComment) ] []
+        , formRow "" <| btn "save" SaveForm
         ]
 
 
@@ -144,12 +165,9 @@ viewLogin pwd label =
 
 viewChangeMasterPassword : String -> Html Msg
 viewChangeMasterPassword newPassword =
-    div []
-        [ backToList
-        , Html.table []
-            [ formRow "new password" <| input [ value newPassword, type_ "password", onInput FmMasterPassword ] []
-            , formRow "" <| btn "update" ChangeMasterPassword
-            ]
+    form
+        [ formRow "new password" <| input [ value newPassword, type_ "password", onInput FmMasterPassword ] []
+        , formRow "" <| btn "update" (ChangeMasterPassword newPassword)
         ]
 
 
@@ -164,47 +182,32 @@ viewDownload v =
                 Just { url, label } ->
                     Html.a [ href url, Attr.downloadAs "passwords.json" ] [ text label ]
     in
-    div []
-        [ backToList
-        , row [ inner ]
-        ]
+    row [ inner ]
 
 
 viewUpload : Html Msg
 viewUpload =
-    div []
-        [ backToList
-        , Html.table []
-            [ formRow "Select file" <| input [ type_ "file", Attr.id "passwords-file" ] []
-            , formRow "" <| btn "upload" UploadPasswords
-            ]
+    form
+        [ formRow "Select file" <| input [ type_ "file", Attr.id "passwords-file" ] []
+        , formRow "" <| btn "upload" UploadPasswords
         ]
 
 
-viewMenu : Html Msg
+viewMenu : List (Html Msg)
 viewMenu =
-    div []
-        [ backToList
-        , menuLink "Change master password" RtPasswordChangeForm
-        , menuLink "Download unencrypted passwords" RtDownload
-        , menuLink "Upload unencrypted passwords" RtUpload
-        ]
+    [ menuLink "New" RtNew
+    , menuLink "Change master password" RtPasswordChangeForm
+    , menuLink "Download unencrypted passwords" RtDownload
+    , menuLink "Upload unencrypted passwords" RtUpload
+    ]
 
 
-viewItemMenu : PwdRec -> Html Msg
+viewItemMenu : PwdRec -> List (Html Msg)
 viewItemMenu rec =
-    div []
-        [ backToList
-        , row [ Html.h3 [] [ text rec.name ] ]
-        , menuLink "Edit" <| RtEdit rec.name
-        , menuItem "Copy password" <| CopyToClipboard rec.password
-        , menuItem "Delete" <| DeleteItem rec.name
-        ]
-
-
-viewErr : String -> Html Msg
-viewErr label =
-    div [] [ text label ]
+    [ menuLink "Edit" <| RtEdit rec.name
+    , menuItem "Copy password" <| CopyToClipboard rec.password
+    , menuItem "Delete" <| DeleteItem rec.name
+    ]
 
 
 viewLoggedOut : Html Msg
@@ -214,30 +217,37 @@ viewLoggedOut =
 
 viewReady : Model -> Html Msg
 viewReady model =
+    let
+        nv =
+            normalView model.err
+    in
     case model.state of
         DownloadView data ->
-            viewDownload data
+            nv "Download" [ viewDownload data ]
 
         UploadView ->
-            viewUpload
+            nv "Upload" [ viewUpload ]
 
-        EditView _ fm ->
-            viewForm fm model.err
+        EditView Nothing fm ->
+            nv "New" [ viewForm fm ]
+
+        EditView (Just name) fm ->
+            nv "Edit" [ viewForm fm ]
 
         MenuView ->
-            viewMenu
+            nv "Main menu" viewMenu
 
         ListView ->
             viewList model.passwordsFilter model.passwords
 
         ItemMenuView rec ->
-            viewItemMenu rec
+            nv rec.name <| viewItemMenu rec
 
         ErrorView label ->
-            viewErr label
+            nv "Error" [ text label ]
 
         ChangePasswordView pwd ->
-            viewChangeMasterPassword pwd
+            nv "Change master password" [ viewChangeMasterPassword pwd ]
 
 
 view : Model -> Html Msg

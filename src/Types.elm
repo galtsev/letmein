@@ -123,7 +123,7 @@ type
     | CopyToClipboard String
     | DeleteItem String
       -- menu
-    | ChangeMasterPassword
+    | ChangeMasterPassword String
     | DownloadUrlCreated String
     | UploadPasswords
     | FileData String

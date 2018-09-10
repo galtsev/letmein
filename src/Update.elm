@@ -37,7 +37,7 @@ routeChanged loc model =
 
         newState : ViewState -> ( Model, Cmd Msg )
         newState st =
-            { model | state = st } ! []
+            { model | state = st, err = Nothing } ! []
     in
     case parseLocation loc of
         RtNew ->
@@ -171,23 +171,18 @@ update msg model_ =
                     { model | passwords = newPasswords, seed = newSeed } ! [ Api.savePasswords chiper, navigateTo RtList ]
 
                 Err err ->
-                    Debug.log err ( model, Cmd.none )
+                    { model | err = Just err } ! []
 
         GotSeed tm ->
             { model | seed = Random.initialSeed (truncate (Time.inMilliseconds tm)) } ! [ Cmd.none ]
 
-        ChangeMasterPassword ->
-            case model.state of
-                ChangePasswordView newPwd ->
-                    case Api.encrypt model.seed newPwd model.passwords of
-                        Ok ( chiper, newSeed ) ->
-                            { model | masterPassword = newPwd, seed = newSeed } ! [ Api.savePasswords chiper, navigateTo RtList ]
+        ChangeMasterPassword newPwd ->
+            case Api.encrypt model.seed newPwd model.passwords of
+                Ok ( chiper, newSeed ) ->
+                    { model | masterPassword = newPwd, seed = newSeed } ! [ Api.savePasswords chiper, navigateTo RtList ]
 
-                        Err err ->
-                            Debug.log err ( model, Cmd.none )
-
-                st ->
-                    unexpectedMessage st msg model
+                Err err ->
+                    { model | err = Just err } ! []
 
         DownloadUrlCreated url ->
             let
@@ -234,4 +229,4 @@ update msg model_ =
                     Debug.log err ( model, Cmd.none )
 
         FmFilter s ->
-            { model | passwordsFilter = s } ! [ Cmd.none ]
+            { model | passwordsFilter = s } ! []
