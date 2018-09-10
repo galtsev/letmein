@@ -5,6 +5,7 @@ module Types exposing
     , InitState(..)
     , Model
     , Msg(..)
+    , ViewState(..)
     , emptyForm
     , emptyModel
     , errToString
@@ -48,6 +49,11 @@ type alias EditForm =
     }
 
 
+type ViewState
+    = RouteView Route
+    | DownloadView (Maybe { url : String, label : String })
+
+
 emptyForm : EditForm
 emptyForm =
     { rec = PwdRec.empty
@@ -60,12 +66,11 @@ type alias Model =
     { passwords : List PwdRec
     , passwordsFilter : String
     , masterPassword : String
-    , route : Route
     , form : EditForm
     , initState : InitState
     , formPassword : String
     , seed : Random.Seed
-    , download : { url : String, label : String }
+    , state : ViewState
     , ticks : Int
     }
 
@@ -75,12 +80,11 @@ emptyModel =
     { passwords = []
     , passwordsFilter = ""
     , masterPassword = ""
-    , route = RtList
     , form = emptyForm
     , initState = Loading
     , formPassword = ""
     , seed = Random.initialSeed 0
-    , download = { url = "", label = "" }
+    , state = RouteView RtList
     , ticks = 0
     }
 
@@ -115,7 +119,6 @@ type
     | DeleteItem String
       -- menu
     | ChangeMasterPassword String
-    | PrepareDownload
     | DownloadUrlCreated String
     | UploadPasswords
     | FileData String

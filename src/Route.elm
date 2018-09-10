@@ -1,7 +1,7 @@
-module Route exposing (Route(..), parseLocation, toHash)
+module Route exposing (Route(..), navigateTo, parseLocation, toHash)
 
 import Http
-import Navigation exposing (Location)
+import Navigation exposing (Location, newUrl)
 import UrlParser as U exposing ((</>), Parser, s, top)
 
 
@@ -66,3 +66,8 @@ parseLocation : Location -> Route
 parseLocation loc =
     Maybe.withDefault (RtNotFound loc.hash) <|
         U.parseHash locationParser loc
+
+
+navigateTo : Route -> Cmd msg
+navigateTo r =
+    newUrl (toHash r)

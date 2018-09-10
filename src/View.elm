@@ -7,7 +7,7 @@ import Http exposing (Error(..))
 import PwdRec exposing (PwdRec)
 import Route exposing (Route(..))
 import String
-import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..))
+import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..), ViewState(..))
 
 
 link : String -> Route -> Html Msg
@@ -153,13 +153,20 @@ viewChangeMasterPassword model =
         ]
 
 
-viewDownload : { url : String, label : String } -> Html Msg
-viewDownload { url, label } =
+viewDownload : Maybe { url : String, label : String } -> Html Msg
+viewDownload v =
+    let
+        inner =
+            case v of
+                Nothing ->
+                    text "Preparing..."
+
+                Just { url, label } ->
+                    Html.a [ href url, Attr.downloadAs "passwords.json" ] [ text label ]
+    in
     div []
         [ backToList
-        , row
-            [ Html.a [ href url, Attr.downloadAs "passwords.json" ] [ text label ]
-            ]
+        , row [ inner ]
         ]
 
 
@@ -179,7 +186,7 @@ viewMenu =
     div []
         [ backToList
         , menuLink "Change master password" RtPasswordChangeForm
-        , menuItem "Download unencrypted passwords" PrepareDownload
+        , menuLink "Download unencrypted passwords" RtDownload
         , menuLink "Upload unencrypted passwords" RtUpload
         ]
 
@@ -195,8 +202,8 @@ viewItemMenu rec =
         ]
 
 
-viewReady : Model -> Html Msg
-viewReady model =
+viewRoute : Route -> Model -> Html Msg
+viewRoute route model =
     let
         findItem : String -> List PwdRec -> PwdRec
         findItem name lst =
@@ -211,7 +218,7 @@ viewReady model =
                     else
                         findItem name xs
     in
-    case model.route of
+    case route of
         RtList ->
             viewList model.passwordsFilter model.passwords
 
@@ -234,15 +241,30 @@ viewReady model =
             viewChangeMasterPassword model
 
         RtDownload ->
-            viewDownload model.download
+            viewErr "Unexpected: route handled in state"
 
         RtUpload ->
             viewUpload
 
 
+viewErr : String -> Html Msg
+viewErr label =
+    div [] [ text label ]
+
+
 viewLoggedOut : Html Msg
 viewLoggedOut =
     div [] [ text "logged out" ]
+
+
+viewReady : Model -> Html Msg
+viewReady model =
+    case model.state of
+        DownloadView data ->
+            viewDownload data
+
+        RouteView route ->
+            viewRoute route model
 
 
 view : Model -> Html Msg

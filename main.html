@@ -12,6 +12,7 @@
             var key = kv[0]
             var value = kv[1]
             localStorage.setItem(key, value)
+            console.log("saved: "+key)
         })
         app.ports.get.subscribe(function(key){
             app.ports.getSub.send(localStorage.getItem(key))

@@ -4,7 +4,7 @@ import Api
 import Navigation exposing (newUrl)
 import PwdRec exposing (PwdRec)
 import Route exposing (Route(RtEdit, RtList, RtNew), toHash)
-import Types exposing (EditForm, FormMsg(..), Model, Msg)
+import Types exposing (EditForm, FormMsg(..), Model, Msg, ViewState(..))
 
 
 updateForm : FormMsg -> EditForm -> EditForm
@@ -50,11 +50,11 @@ saveForm model =
                 name =
                     model.form.rec.name
             in
-            case model.route of
-                RtNew ->
+            case model.state of
+                RouteView RtNew ->
                     invalid name
 
-                RtEdit oldName ->
+                RouteView (RtEdit oldName) ->
                     name /= oldName && invalid name
 
                 _ ->
@@ -74,11 +74,11 @@ saveForm model =
         let
             newPasswords =
                 List.sortBy .name <|
-                    case model.route of
-                        RtNew ->
+                    case model.state of
+                        RouteView RtNew ->
                             model.form.rec :: model.passwords
 
-                        RtEdit name ->
+                        RouteView (RtEdit name) ->
                             List.map
                                 (\itm ->
                                     if itm.name == name then

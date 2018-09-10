@@ -1,7 +1,8 @@
-module Api exposing (encrypt, get, put, savePasswords)
+module Api exposing (decrypt, encrypt, get, put, savePasswords)
 
 import Crypto.Strings as Cr
 import Http exposing (Error(..))
+import Json.Decode as D
 import Json.Encode as E
 import Ports
 import PwdRec exposing (PwdRec)
@@ -50,6 +51,13 @@ encrypt seed masterPassword pwds =
         |> E.list
         |> E.encode 2
         |> Cr.encrypt seed masterPassword
+
+
+decrypt : String -> String -> Result String (List PwdRec)
+decrypt pwd data =
+    data
+        |> Cr.decrypt pwd
+        |> Result.andThen (D.decodeString (D.list PwdRec.decoder))
 
 
 savePasswords : String -> Cmd Msg

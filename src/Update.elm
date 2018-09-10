@@ -1,29 +1,25 @@
 module Update exposing (update)
 
 import Api
-import Crypto.Strings as Cr
 import Json.Decode as D
 import Json.Encode as E
-import Navigation exposing (newUrl)
-import Platform.Cmd exposing (batch)
+import Navigation exposing (Location)
 import Ports
 import PwdForm
 import PwdRec exposing (PwdRec)
 import Random
 import RemoteData exposing (RemoteData(..))
-import Route exposing (Route(..), parseLocation, toHash)
+import Route exposing (Route(..), navigateTo, parseLocation, toHash)
 import Time
-import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..), emptyForm, emptyModel)
+import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..), ViewState(..), emptyForm, emptyModel)
 
 
-navigateTo : Route -> Cmd Msg
-navigateTo r =
-    newUrl (toHash r)
-
-
-routeChanged : Route -> Model -> Model
-routeChanged route model =
+routeChanged : Location -> Model -> ( Model, Cmd Msg )
+routeChanged loc model =
     let
+        route =
+            parseLocation loc
+
         findRec : String -> List PwdRec -> PwdRec
         findRec name lst =
             case lst of
@@ -36,26 +32,32 @@ routeChanged route model =
 
                     else
                         findRec name xs
+
+        newModel =
+            { model | state = RouteView route }
     in
     case route of
         RtNew ->
-            { model | form = emptyForm }
+            { newModel | form = emptyForm } ! []
 
         RtEdit name ->
-            { model | form = { emptyForm | rec = findRec name model.passwords } }
+            { newModel | form = { emptyForm | rec = findRec name model.passwords } } ! []
 
         RtPasswordChangeForm ->
-            { model | formPassword = "" }
+            { newModel | formPassword = "" } ! []
+
+        RtDownload ->
+            let
+                jsonPwds =
+                    model.passwords
+                        |> List.map PwdRec.encode
+                        |> E.list
+                        |> E.encode 2
+            in
+            { model | state = DownloadView Nothing } ! [ Ports.makeDownloadUrl jsonPwds ]
 
         _ ->
-            model
-
-
-decrypt : String -> String -> Result String (List PwdRec)
-decrypt pwd data =
-    data
-        |> Cr.decrypt pwd
-        |> Result.andThen (D.decodeString (D.list PwdRec.decoder))
+            newModel ! []
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -95,7 +97,7 @@ update msg model_ =
             in
             case model.initState of
                 Sealed _ data ->
-                    case decrypt pwd data of
+                    case Api.decrypt pwd data of
                         Ok pwds ->
                             ( { model | passwords = List.sortBy .name pwds, initState = Ready, masterPassword = pwd }, Cmd.none )
 
@@ -109,17 +111,10 @@ update msg model_ =
                     ( model, Cmd.none )
 
         RouteTo location ->
-            let
-                newRoute =
-                    parseLocation location
-
-                newModel =
-                    routeChanged newRoute model
-            in
-            ( { newModel | route = newRoute }, Cmd.none )
+            routeChanged location model
 
         NavigateTo route ->
-            ( model, newUrl (toHash route) )
+            model ! [ navigateTo route ]
 
         MsgForm fmsg ->
             ( { model | form = PwdForm.updateForm fmsg model.form }, Cmd.none )
@@ -149,22 +144,12 @@ update msg model_ =
             { model | seed = Random.initialSeed (truncate (Time.inMilliseconds tm)) } ! [ Cmd.none ]
 
         ChangeMasterPassword newPwd ->
-            case Api.encrypt model.seed model.masterPassword model.passwords of
+            case Api.encrypt model.seed newPwd model.passwords of
                 Ok ( chiper, newSeed ) ->
                     { model | masterPassword = newPwd, seed = newSeed } ! [ Api.savePasswords chiper, navigateTo RtList ]
 
                 Err err ->
                     Debug.log err ( model, Cmd.none )
-
-        PrepareDownload ->
-            let
-                jsonPwds =
-                    model.passwords
-                        |> List.map PwdRec.encode
-                        |> E.list
-                        |> E.encode 2
-            in
-            model ! [ Ports.makeDownloadUrl jsonPwds ]
 
         DownloadUrlCreated url ->
             let
@@ -173,7 +158,7 @@ update msg model_ =
                     , label = "Click here to start download"
                     }
             in
-            { model | download = download } ! [ navigateTo RtDownload ]
+            { model | state = DownloadView (Just download) } ! []
 
         Tick _ ->
             let
