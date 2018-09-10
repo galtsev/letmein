@@ -49,14 +49,14 @@ type alias EditForm =
 
 
 type ViewState
-    = RouteView Route
-    | DownloadView (Maybe { url : String, label : String })
+    = DownloadView (Maybe { url : String, label : String })
     | UploadView
     | EditView (Maybe String) EditForm
     | MenuView
     | ItemMenuView PwdRec
     | ListView
     | ErrorView String
+    | ChangePasswordView String
 
 
 emptyForm : EditForm
@@ -87,7 +87,7 @@ emptyModel =
     , initState = Loading
     , formPassword = ""
     , seed = Random.initialSeed 0
-    , state = RouteView RtList
+    , state = ListView
     , err = Nothing
     , ticks = 0
     }
@@ -109,6 +109,7 @@ type
     = PasswordsResponse (Result ApiError String)
     | GotSeed Time.Time
     | FmLogin String
+    | FmMasterPassword String
     | TryPassword
       -- Navigation
     | RouteTo Location
@@ -122,7 +123,7 @@ type
     | CopyToClipboard String
     | DeleteItem String
       -- menu
-    | ChangeMasterPassword String
+    | ChangeMasterPassword
     | DownloadUrlCreated String
     | UploadPasswords
     | FileData String

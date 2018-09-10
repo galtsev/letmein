@@ -22,9 +22,6 @@ unexpectedMessage st msg model =
 routeChanged : Location -> Model -> ( Model, Cmd Msg )
 routeChanged loc model =
     let
-        route =
-            parseLocation loc
-
         findRec : String -> List PwdRec -> PwdRec
         findRec name lst =
             case lst of
@@ -38,14 +35,11 @@ routeChanged loc model =
                     else
                         findRec name xs
 
-        newModel =
-            { model | state = RouteView route }
-
         newState : ViewState -> ( Model, Cmd Msg )
         newState st =
             { model | state = st } ! []
     in
-    case route of
+    case parseLocation loc of
         RtNew ->
             newState <| EditView Nothing emptyForm
 
@@ -53,7 +47,7 @@ routeChanged loc model =
             newState <| EditView (Just name) { emptyForm | rec = findRec name model.passwords }
 
         RtPasswordChangeForm ->
-            { newModel | formPassword = "" } ! []
+            newState <| ChangePasswordView ""
 
         RtDownload ->
             let
@@ -110,6 +104,14 @@ update msg model_ =
 
         FmLogin pwd ->
             ( { model | formPassword = pwd }, Cmd.none )
+
+        FmMasterPassword pwd ->
+            case model.state of
+                ChangePasswordView _ ->
+                    { model | state = ChangePasswordView pwd } ! []
+
+                st ->
+                    unexpectedMessage st msg model
 
         TryPassword ->
             let
@@ -174,13 +176,18 @@ update msg model_ =
         GotSeed tm ->
             { model | seed = Random.initialSeed (truncate (Time.inMilliseconds tm)) } ! [ Cmd.none ]
 
-        ChangeMasterPassword newPwd ->
-            case Api.encrypt model.seed newPwd model.passwords of
-                Ok ( chiper, newSeed ) ->
-                    { model | masterPassword = newPwd, seed = newSeed } ! [ Api.savePasswords chiper, navigateTo RtList ]
+        ChangeMasterPassword ->
+            case model.state of
+                ChangePasswordView newPwd ->
+                    case Api.encrypt model.seed newPwd model.passwords of
+                        Ok ( chiper, newSeed ) ->
+                            { model | masterPassword = newPwd, seed = newSeed } ! [ Api.savePasswords chiper, navigateTo RtList ]
 
-                Err err ->
-                    Debug.log err ( model, Cmd.none )
+                        Err err ->
+                            Debug.log err ( model, Cmd.none )
+
+                st ->
+                    unexpectedMessage st msg model
 
         DownloadUrlCreated url ->
             let

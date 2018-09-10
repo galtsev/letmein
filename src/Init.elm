@@ -11,7 +11,7 @@ import Types exposing (Model, Msg(GotSeed, PasswordsResponse), ViewState(..), em
 
 init : Location -> ( Model, Cmd Msg )
 init location =
-    { emptyModel | state = RouteView (parseLocation location) }
+    { emptyModel | state = ListView }
         ! [ Api.get PasswordsResponse "passwords.json"
           , Time.now |> Task.perform GotSeed
           ]

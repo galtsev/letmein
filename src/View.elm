@@ -142,13 +142,13 @@ viewLogin pwd label =
         ]
 
 
-viewChangeMasterPassword : Model -> Html Msg
-viewChangeMasterPassword model =
+viewChangeMasterPassword : String -> Html Msg
+viewChangeMasterPassword newPassword =
     div []
         [ backToList
         , Html.table []
-            [ formRow "new password" <| input [ value model.formPassword, type_ "password", onInput FmLogin ] []
-            , formRow "" <| btn "update" (ChangeMasterPassword model.formPassword)
+            [ formRow "new password" <| input [ value newPassword, type_ "password", onInput FmMasterPassword ] []
+            , formRow "" <| btn "update" ChangeMasterPassword
             ]
         ]
 
@@ -202,51 +202,6 @@ viewItemMenu rec =
         ]
 
 
-viewRoute : Route -> Model -> Html Msg
-viewRoute route model =
-    let
-        findItem : String -> List PwdRec -> PwdRec
-        findItem name lst =
-            case lst of
-                [] ->
-                    PwdRec.empty
-
-                x :: xs ->
-                    if x.name == name then
-                        x
-
-                    else
-                        findItem name xs
-    in
-    case route of
-        RtList ->
-            viewErr "Unexpected: route handled in state"
-
-        RtNew ->
-            viewErr "Unexpected: route handled in state"
-
-        RtEdit name ->
-            viewErr "Unexpected: route handled in state"
-
-        RtItemMenu name ->
-            viewErr "Unexpected: route handled in state"
-
-        RtNotFound path ->
-            viewErr "Unexpected: route handled in state"
-
-        RtMenu ->
-            viewErr "Unexpected: route handled in state"
-
-        RtPasswordChangeForm ->
-            viewChangeMasterPassword model
-
-        RtDownload ->
-            viewErr "Unexpected: route handled in state"
-
-        RtUpload ->
-            viewErr "Unexpected: route handled in state"
-
-
 viewErr : String -> Html Msg
 viewErr label =
     div [] [ text label ]
@@ -266,9 +221,6 @@ viewReady model =
         UploadView ->
             viewUpload
 
-        RouteView route ->
-            viewRoute route model
-
         EditView _ fm ->
             viewForm fm model.err
 
@@ -283,6 +235,9 @@ viewReady model =
 
         ErrorView label ->
             viewErr label
+
+        ChangePasswordView pwd ->
+            viewChangeMasterPassword pwd
 
 
 view : Model -> Html Msg
