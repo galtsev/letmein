@@ -11,7 +11,7 @@ import Random
 import RemoteData exposing (RemoteData(..))
 import Route exposing (Route(..), navigateTo, parseLocation, toHash)
 import Time
-import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..), ViewState(..), emptyForm, emptyModel)
+import Types exposing (ApiError(..), EditForm, FormMsg(..), Model, Msg(..), ViewState(..), emptyForm, emptyModel)
 
 
 unexpectedMessage : ViewState -> Msg -> Model -> ( Model, Cmd Msg )
@@ -92,18 +92,30 @@ update msg model_ =
                 newState =
                     case d of
                         Err NotFound ->
-                            Missing
+                            Missing ""
 
                         Err (Other err) ->
                             LoadingFailed err
 
                         Ok data ->
-                            Sealed False data
+                            Sealed False data ""
             in
-            ( { model | initState = newState }, Cmd.none )
+            ( { model | state = newState }, Cmd.none )
 
         FmLogin pwd ->
-            ( { model | formPassword = pwd }, Cmd.none )
+            let
+                newState =
+                    case model.state of
+                        Missing _ ->
+                            Missing pwd
+
+                        Sealed err data _ ->
+                            Sealed err data pwd
+
+                        _ ->
+                            model.state
+            in
+            ( { model | state = newState }, Cmd.none )
 
         FmMasterPassword pwd ->
             case model.state of
@@ -114,24 +126,20 @@ update msg model_ =
                     unexpectedMessage st msg model
 
         TryPassword ->
-            let
-                pwd =
-                    model.formPassword
-            in
-            case model.initState of
-                Sealed _ data ->
+            case model.state of
+                Sealed _ data pwd ->
                     case Api.decrypt pwd data of
                         Ok pwds ->
-                            ( { model | passwords = List.sortBy .name pwds, initState = Ready, masterPassword = pwd }, navigateTo RtList )
+                            { model | passwords = List.sortBy .name pwds, state = ListView, masterPassword = pwd } ! [ navigateTo RtList ]
 
                         Err str ->
-                            ( { model | initState = Sealed True data, formPassword = "" }, Cmd.none )
+                            { model | state = Sealed True data "" } ! []
 
-                Missing ->
-                    ( { model | passwords = [], initState = Ready, masterPassword = pwd }, Cmd.none )
+                Missing pwd ->
+                    { model | passwords = [], state = ListView, masterPassword = pwd } ! [ navigateTo RtList ]
 
                 _ ->
-                    ( model, Cmd.none )
+                    model ! []
 
         RouteTo location ->
             routeChanged location model
@@ -203,7 +211,7 @@ update msg model_ =
                         { model | ticks = newTicks }
 
                     else
-                        { emptyModel | initState = LoggedOut }
+                        { emptyModel | state = LoggedOut }
             in
             ( newModel, Cmd.none )
 

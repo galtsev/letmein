@@ -2,7 +2,6 @@ module Types exposing
     ( ApiError(..)
     , EditForm
     , FormMsg(..)
-    , InitState(..)
     , Model
     , Msg(..)
     , ViewState(..)
@@ -33,15 +32,6 @@ errToString err =
             s
 
 
-type InitState
-    = Loading
-    | Missing
-    | LoadingFailed String
-    | Sealed Bool String -- Sealed <decryption failed> <encrypted data>
-    | Ready
-    | LoggedOut
-
-
 type alias EditForm =
     { rec : PwdRec
     , pwdVisible : Bool
@@ -57,6 +47,11 @@ type ViewState
     | ListView
     | ErrorView String
     | ChangePasswordView String
+    | Loading
+    | LoadingFailed String
+    | Missing String
+    | Sealed Bool String String
+    | LoggedOut
 
 
 emptyForm : EditForm
@@ -70,8 +65,6 @@ type alias Model =
     { passwords : List PwdRec
     , passwordsFilter : String
     , masterPassword : String
-    , initState : InitState
-    , formPassword : String
     , seed : Random.Seed
     , state : ViewState
     , err : Maybe String
@@ -84,10 +77,8 @@ emptyModel =
     { passwords = []
     , passwordsFilter = ""
     , masterPassword = ""
-    , initState = Loading
-    , formPassword = ""
     , seed = Random.initialSeed 0
-    , state = ListView
+    , state = Loading
     , err = Nothing
     , ticks = 0
     }

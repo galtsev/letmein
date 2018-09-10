@@ -7,7 +7,7 @@ import Http exposing (Error(..))
 import PwdRec exposing (PwdRec)
 import Route exposing (Route(..))
 import String
-import Types exposing (ApiError(..), EditForm, FormMsg(..), InitState(..), Model, Msg(..), ViewState(..))
+import Types exposing (ApiError(..), EditForm, FormMsg(..), Model, Msg(..), ViewState(..))
 
 
 link : String -> Route -> Html Msg
@@ -98,6 +98,13 @@ normalView err label content =
             ]
 
 
+loginView : String -> List (Html Msg) -> Html Msg
+loginView label content =
+    div [] <|
+        div [ class "header" ] [ text label ]
+            :: content
+
+
 viewList : String -> List PwdRec -> Html Msg
 viewList filter pwds =
     let
@@ -151,16 +158,14 @@ viewForm { rec, pwdVisible } =
         ]
 
 
-viewLogin : String -> String -> Html Msg
+viewLogin : String -> String -> List (Html Msg)
 viewLogin pwd label =
-    div []
-        [ div [ class "header" ] [ text "login" ]
-        , row <| [ text label ]
-        , Html.table []
-            [ formRow "password" <| input [ value pwd, type_ "password", onInput FmLogin ] []
-            , formRow "" <| btn "login" TryPassword
-            ]
+    [ row [ text label ]
+    , form
+        [ formRow "password" <| input [ value pwd, type_ "password", onInput FmLogin ] []
+        , formRow "" <| btn "login" TryPassword
         ]
+    ]
 
 
 viewChangeMasterPassword : String -> Html Msg
@@ -249,36 +254,31 @@ viewReady model =
         ChangePasswordView pwd ->
             nv "Change master password" [ viewChangeMasterPassword pwd ]
 
+        Loading ->
+            loginView "Login" [ text "loading ..." ]
+
+        LoadingFailed err ->
+            loginView "Error" [ text err ]
+
+        Missing pwd ->
+            loginView "Login" <| viewLogin pwd "Creating new vault"
+
+        Sealed err data pwd ->
+            let
+                label =
+                    case err of
+                        True ->
+                            "Bad password. Try again"
+
+                        False ->
+                            "Enter password"
+            in
+            loginView "Login" <| viewLogin pwd label
+
+        LoggedOut ->
+            loginView "Logged out" [ text "F5 to login" ]
+
 
 view : Model -> Html Msg
 view model =
-    let
-        content =
-            case model.initState of
-                Loading ->
-                    div [] [ text "Loading ..." ]
-
-                Missing ->
-                    viewLogin model.formPassword "Creating vault. Enter new password"
-
-                LoadingFailed err ->
-                    div [] [ text <| "Error loading passwords: " ++ err ]
-
-                Sealed flag data ->
-                    let
-                        label =
-                            if flag then
-                                "Bad password, try again."
-
-                            else
-                                "Enter password"
-                    in
-                    viewLogin model.formPassword label
-
-                Ready ->
-                    viewReady model
-
-                LoggedOut ->
-                    viewLoggedOut
-    in
-    div [ class "content" ] [ content ]
+    div [ class "content" ] [ viewReady model ]
