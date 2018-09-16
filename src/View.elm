@@ -7,7 +7,7 @@ import Http exposing (Error(..))
 import PwdRec exposing (PwdRec)
 import Route exposing (Route(..))
 import String
-import Types exposing (ApiError(..), EditForm, FormMsg(..), Model, Msg(..), ViewState(..))
+import Types exposing (ApiError(..), EditForm, FormMsg(..), LoginState(..), Model, Msg(..), ViewState(..))
 
 
 link : String -> Route -> Html Msg
@@ -220,6 +220,34 @@ viewLoggedOut =
     div [] [ text "logged out" ]
 
 
+viewLoginState : LoginState -> Html Msg
+viewLoginState st =
+    case st of
+        Loading ->
+            loginView "Login" [ text "loading ..." ]
+
+        LoadingFailed err ->
+            loginView "Error" [ text err ]
+
+        Missing pwd ->
+            loginView "Login" <| viewLogin pwd "Creating new vault"
+
+        Sealed err data pwd ->
+            let
+                label =
+                    case err of
+                        True ->
+                            "Bad password. Try again"
+
+                        False ->
+                            "Enter password"
+            in
+            loginView "Login" <| viewLogin pwd label
+
+        LoggedOut ->
+            loginView "Logged out" [ text "F5 to login" ]
+
+
 viewReady : Model -> Html Msg
 viewReady model =
     let
@@ -227,6 +255,9 @@ viewReady model =
             normalView model.err
     in
     case model.state of
+        LoginView st ->
+            viewLoginState st
+
         DownloadView data ->
             nv "Download" [ viewDownload data ]
 
@@ -253,30 +284,6 @@ viewReady model =
 
         ChangePasswordView pwd ->
             nv "Change master password" [ viewChangeMasterPassword pwd ]
-
-        Loading ->
-            loginView "Login" [ text "loading ..." ]
-
-        LoadingFailed err ->
-            loginView "Error" [ text err ]
-
-        Missing pwd ->
-            loginView "Login" <| viewLogin pwd "Creating new vault"
-
-        Sealed err data pwd ->
-            let
-                label =
-                    case err of
-                        True ->
-                            "Bad password. Try again"
-
-                        False ->
-                            "Enter password"
-            in
-            loginView "Login" <| viewLogin pwd label
-
-        LoggedOut ->
-            loginView "Logged out" [ text "F5 to login" ]
 
 
 view : Model -> Html Msg

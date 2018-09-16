@@ -11,7 +11,7 @@ import Random
 import RemoteData exposing (RemoteData(..))
 import Route exposing (Route(..), navigateTo, parseLocation, toHash)
 import Time
-import Types exposing (ApiError(..), EditForm, FormMsg(..), Model, Msg(..), ViewState(..), emptyForm, emptyModel)
+import Types exposing (ApiError(..), EditForm, FormMsg(..), LoginState(..), Model, Msg(..), ViewState(..), emptyForm, emptyModel)
 
 
 unexpectedMessage : ViewState -> Msg -> Model -> ( Model, Cmd Msg )
@@ -90,15 +90,16 @@ update msg model_ =
         PasswordsResponse d ->
             let
                 newState =
-                    case d of
-                        Err NotFound ->
-                            Missing ""
+                    LoginView <|
+                        case d of
+                            Err NotFound ->
+                                Missing ""
 
-                        Err (Other err) ->
-                            LoadingFailed err
+                            Err (Other err) ->
+                                LoadingFailed err
 
-                        Ok data ->
-                            Sealed False data ""
+                            Ok data ->
+                                Sealed False data ""
             in
             ( { model | state = newState }, Cmd.none )
 
@@ -106,11 +107,11 @@ update msg model_ =
             let
                 newState =
                     case model.state of
-                        Missing _ ->
-                            Missing pwd
+                        LoginView (Missing _) ->
+                            LoginView (Missing pwd)
 
-                        Sealed err data _ ->
-                            Sealed err data pwd
+                        LoginView (Sealed err data _) ->
+                            LoginView (Sealed err data pwd)
 
                         _ ->
                             model.state
@@ -127,15 +128,15 @@ update msg model_ =
 
         TryPassword ->
             case model.state of
-                Sealed _ data pwd ->
+                LoginView (Sealed _ data pwd) ->
                     case Api.decrypt pwd data of
                         Ok pwds ->
                             { model | passwords = List.sortBy .name pwds, state = ListView, masterPassword = pwd } ! [ navigateTo RtList ]
 
                         Err str ->
-                            { model | state = Sealed True data "" } ! []
+                            { model | state = LoginView (Sealed True data "") } ! []
 
-                Missing pwd ->
+                LoginView (Missing pwd) ->
                     { model | passwords = [], state = ListView, masterPassword = pwd } ! [ navigateTo RtList ]
 
                 _ ->
@@ -211,7 +212,7 @@ update msg model_ =
                         { model | ticks = newTicks }
 
                     else
-                        { emptyModel | state = LoggedOut }
+                        { emptyModel | state = LoginView LoggedOut }
             in
             ( newModel, Cmd.none )
 

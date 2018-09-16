@@ -2,6 +2,7 @@ module Types exposing
     ( ApiError(..)
     , EditForm
     , FormMsg(..)
+    , LoginState(..)
     , Model
     , Msg(..)
     , ViewState(..)
@@ -38,8 +39,17 @@ type alias EditForm =
     }
 
 
+type LoginState
+    = Loading
+    | LoadingFailed String
+    | Missing String
+    | Sealed Bool String String
+    | LoggedOut
+
+
 type ViewState
-    = DownloadView (Maybe { url : String, label : String })
+    = LoginView LoginState
+    | DownloadView (Maybe { url : String, label : String })
     | UploadView
     | EditView (Maybe String) EditForm
     | MenuView
@@ -47,11 +57,6 @@ type ViewState
     | ListView
     | ErrorView String
     | ChangePasswordView String
-    | Loading
-    | LoadingFailed String
-    | Missing String
-    | Sealed Bool String String
-    | LoggedOut
 
 
 emptyForm : EditForm
@@ -78,7 +83,7 @@ emptyModel =
     , passwordsFilter = ""
     , masterPassword = ""
     , seed = Random.initialSeed 0
-    , state = Loading
+    , state = LoginView Loading
     , err = Nothing
     , ticks = 0
     }
